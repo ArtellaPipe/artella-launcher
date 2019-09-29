@@ -31,8 +31,8 @@ from tpPyUtils import path as path_utils
 
 import artellapipe
 artellapipe.init()
-import artellalauncher
-artellalauncher.init()
+import artellapipe.launcher
+artellapipe.launcher.init()
 
 paths_to_add = [
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'source')
@@ -109,7 +109,7 @@ def retrieve_data():
     # Retrieve resource files
     data_files = list()
 
-    for mod in [project_mod, artellapipe, artellalauncher, tpQtLib]:
+    for mod in [project_mod, artellapipe, artellapipe.launcher, tpQtLib]:
         mod_path = os.path.dirname(os.path.abspath(mod.__file__))
         resources_path = path_utils.clean_path(os.path.join(mod_path, resources_folder_name))
         for root, dirs, files in os.walk(resources_path):
@@ -147,7 +147,7 @@ def retrieve_paths():
     paths_cmd = '--paths'
 
     mod_paths = list()
-    for mod in [tpPyUtils, tpDccLib, tpQtLib, artellapipe, artellalauncher, project_mod]:
+    for mod in [tpPyUtils, tpDccLib, tpQtLib, artellapipe, artellapipe.launcher, project_mod]:
         mod_path = path_utils.clean_path(os.path.dirname(os.path.dirname(os.path.abspath(mod.__file__))))
         mod_paths.append(mod_path)
 

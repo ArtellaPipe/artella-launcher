@@ -25,19 +25,19 @@ from PySide.QtGui import *
 
 import artellapipe
 artellapipe.init()
-import artellalauncher
-artellalauncher.init()
+import artellapipe.launcher
+artellapipe.launcher.init()
 
-import plottwist
-plottwist.init()
+import solstice
+solstice.init()
 
-from plottwist.launcher import launcher
+from solstice.launcher import launcher
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    launcher = launcher.PlotTwistLauncher(plottwist.resource)
+    launcher = launcher.PlotTwistLauncher(solstice.resource)
     launcher.init()
     app.exec_()
 
