@@ -1,0 +1,9 @@
+{
+  "UPDATER_VERSION": "0.0.0",
+  "RELEASE_EXTENSION": "tar.gz",
+  "REPOSITORY_URL": "https://github.com/tpoveda/artellalauncher/",
+  "REPOSITORY_FOLDER": "source",
+  "VERSION_FILE_NAME": "__version__.py",
+  "PROGRESS_BAR_COLOR_0": "255, 255, 255",
+  "PROGRESS_BAR_COLOR_1": "255, 255, 255"
+}

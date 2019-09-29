@@ -1,0 +1,64 @@
+{
+  "LAUNCHER_NAME": "Artella",
+  "LAUNCHER_VERSION": "0.0.0",
+  "DCCS":
+  {
+    "MAYA":
+    {
+      "enabled": "False",
+      "icon": "color/maya",
+      "supported_versions": [""],
+      "default_version": "",
+      "departments": [],
+      "plugins": {}
+    },
+    "NUKE":
+    {
+      "enabled": "False",
+      "icon": "color/nuke",
+      "supported_versions": [""],
+      "default_version": "",
+      "departments": []
+    },
+    "HOUDINI":
+    {
+      "enabled": "False",
+      "icon": "color/houdini",
+      "supported_versions": [""],
+      "default_version": "",
+      "departments": []
+    },
+    "PHOTOSHOP":
+    {
+      "enabled": "False",
+      "icon": "color/photoshop",
+      "supported_versions": [""],
+      "default_version": "",
+      "departments": []
+    },
+    "ZBRUSH":
+    {
+      "enabled": "False",
+      "icon": "color/zbrush",
+      "supported_versions": [""],
+      "default_version": "",
+      "departments": []
+    },
+    "SUBSTANCE PAINTER":
+    {
+      "enabled": "False",
+      "icon": "color/substance_painter",
+      "supported_versions": [""],
+      "default_version": "",
+      "departments": []
+    },
+    "SUBSTANCE DESIGNER":
+    {
+      "enabled": "False",
+      "icon": "color/substance_designer",
+      "supported_versions": [""],
+      "default_version": "",
+      "departments": []
+    }
+  }
+}
