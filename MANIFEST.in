@@ -1,0 +1,4 @@
+include source/artellapipe/launcher/resources/icons/*.*
+include source/artellapipe/launcher/resources/icons/color/*.*
+include source/artellapipe/launcher/resources/images/*.*
+include source/artellapipe/launcher/*.json

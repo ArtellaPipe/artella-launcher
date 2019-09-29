@@ -1,0 +1,9 @@
+# ===================================================================
+# artellalauncher requirements file
+# ===================================================================
+artellapipe-core
+pathlib2
+requests
+packaging
+beautifulsoup4
+lxml
