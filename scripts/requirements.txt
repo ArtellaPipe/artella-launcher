@@ -1,0 +1,9 @@
+PySide;python_version <= '3.4'
+PySide2;python_version > '3.4'
+Qt.py
+PyInstaller
+tpPyUtils
+tpQtLib
+tpDccLib
+artellapipe
+artellalauncher
