@@ -7,5 +7,12 @@ requests
 packaging
 beautifulsoup4
 lxml
+pytest
+pytest-cov
+coveralls
+sphinx
+sphinx_rtd_theme
+python-json-logger
+sentry-sdk==0.12.2
 tpPyUtils
 tpQtLib

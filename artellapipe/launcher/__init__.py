@@ -29,6 +29,9 @@ def init(do_reload=False):
     :param do_reload: bool, Whether to reload modules or not
     """
 
+    import sentry_sdk
+    sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788")
+
     from tpPyUtils import importer
 
     class ArtellaLauncher(importer.Importer, object):
