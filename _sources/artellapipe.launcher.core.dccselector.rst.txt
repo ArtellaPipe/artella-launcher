@@ -1,0 +1,7 @@
+artellapipe.launcher.core.dccselector module
+============================================
+
+.. automodule:: artellapipe.launcher.core.dccselector
+   :members:
+   :undoc-members:
+   :show-inheritance:

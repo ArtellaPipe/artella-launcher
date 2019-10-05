@@ -1,0 +1,17 @@
+artellapipe.launcher.widgets package
+====================================
+
+Submodules
+----------
+
+.. toctree::
+
+   artellapipe.launcher.widgets.console
+
+Module contents
+---------------
+
+.. automodule:: artellapipe.launcher.widgets
+   :members:
+   :undoc-members:
+   :show-inheritance:

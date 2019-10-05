@@ -1,0 +1,7 @@
+artellapipe.launcher.widgets.console module
+===========================================
+
+.. automodule:: artellapipe.launcher.widgets.console
+   :members:
+   :undoc-members:
+   :show-inheritance:

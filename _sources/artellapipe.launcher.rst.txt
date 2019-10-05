@@ -1,0 +1,20 @@
+artellapipe.launcher package
+============================
+
+Subpackages
+-----------
+
+.. toctree::
+
+   artellapipe.launcher.core
+   artellapipe.launcher.dccs
+   artellapipe.launcher.utils
+   artellapipe.launcher.widgets
+
+Module contents
+---------------
+
+.. automodule:: artellapipe.launcher
+   :members:
+   :undoc-members:
+   :show-inheritance:

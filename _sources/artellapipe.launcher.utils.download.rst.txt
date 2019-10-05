@@ -1,0 +1,7 @@
+artellapipe.launcher.utils.download module
+==========================================
+
+.. automodule:: artellapipe.launcher.utils.download
+   :members:
+   :undoc-members:
+   :show-inheritance:
