@@ -170,8 +170,55 @@
 
            <div itemprop="articleBody">
             
-  <div class="section" id="artellapipe-launcher-utils-download-module">
-<h1>artellapipe.launcher.utils.download module<a class="headerlink" href="#artellapipe-launcher-utils-download-module" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-artellapipe.launcher.utils.download">
+<span id="artellapipe-launcher-utils-download-module"></span><h1>artellapipe.launcher.utils.download module<a class="headerlink" href="#module-artellapipe.launcher.utils.download" title="Permalink to this headline">¶</a></h1>
+<p>Module that contains implementation to handle downloads in Artella Launcher</p>
+<dl class="function">
+<dt id="artellapipe.launcher.utils.download.chunk_read">
+<code class="sig-prename descclassname">artellapipe.launcher.utils.download.</code><code class="sig-name descname">chunk_read</code><span class="sig-paren">(</span><em class="sig-param">response</em>, <em class="sig-param">destination</em>, <em class="sig-param">console</em>, <em class="sig-param">chunk_size=8192</em>, <em class="sig-param">report_hook=None</em>, <em class="sig-param">updater=None</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.utils.download.chunk_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that reads a chunk of a dowlnoad operation
+:param response: str
+:param destination: str
+:param console: ArtellaLauncher
+:param chunk_size: int
+:param report_hook: fn
+:param updater: ArtellaUpdater
+:return: int</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="artellapipe.launcher.utils.download.chunk_report">
+<code class="sig-prename descclassname">artellapipe.launcher.utils.download.</code><code class="sig-name descname">chunk_report</code><span class="sig-paren">(</span><em class="sig-param">bytes_so_far</em>, <em class="sig-param">total_size</em>, <em class="sig-param">console</em>, <em class="sig-param">updater=None</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.utils.download.chunk_report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that updates progress bar with current chunk
+:param bytes_so_far: int
+:param total_size: int
+:param console: ArtellaConsole
+:param updater: ArtellaUpdater
+:return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="artellapipe.launcher.utils.download.download_file">
+<code class="sig-prename descclassname">artellapipe.launcher.utils.download.</code><code class="sig-name descname">download_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">destination</em>, <em class="sig-param">console=None</em>, <em class="sig-param">updater=None</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.utils.download.download_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads given file into given target path
+:param filename: str
+:param destination: str
+:param console: ArtellaConsole
+:param updater: ArtellaUpdater
+:return: bool</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="artellapipe.launcher.utils.download.unzip_file">
+<code class="sig-prename descclassname">artellapipe.launcher.utils.download.</code><code class="sig-name descname">unzip_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">destination</em>, <em class="sig-param">console</em>, <em class="sig-param">remove_first=True</em>, <em class="sig-param">remove_sub_folders=None</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.utils.download.unzip_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unzips given file in given folder
+:param filename: str
+:param destination: str
+:param console: ArtellaConsole
+:param remove_first: bool
+:param remove_sub_folders: bool</p>
+</dd></dl>
+
 </div>
 
 
