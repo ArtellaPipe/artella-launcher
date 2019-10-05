@@ -128,7 +128,8 @@ def retrieve_data():
                                 print('Resource path not valid: {}'.format(data_to_add))
                                 continue
 
-                            rel_path = path_utils.clean_path(os.path.join(mod.__name__, os.path.dirname(os.path.relpath(data_to_add, mod_path))))
+                            rel_path = path_utils.clean_path(os.path.join(mod.__name__, os.path.dirname(
+                                os.path.relpath(data_to_add, mod_path))))
                             data_files.append([data_to_add, rel_path])
                             continue
 
@@ -203,8 +204,13 @@ def generate_spec(one_file=True, windowed=True):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Generate Launcher Specs')
-    parser.add_argument('--windowed', required=False, default=False, action='store_true', help='Whether generated executable is windowed or not')
-    parser.add_argument('--onefile', required=False, default=False, action='store_true', help='Whether generated executable is stored in a unique .exe or not')
+    parser.add_argument(
+        '--windowed',
+        required=False, default=False, action='store_true', help='Whether generated executable is windowed or not')
+    parser.add_argument(
+        '--onefile',
+        required=False,
+        default=False, action='store_true', help='Whether generated executable is stored in a unique .exe or not')
     args = parser.parse_args()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))

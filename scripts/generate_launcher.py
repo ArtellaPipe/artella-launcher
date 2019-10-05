@@ -81,9 +81,16 @@ def cleanup():
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Generate Launcher')
-    parser.add_argument('--generate-spec', required=False, default=False, action='store_true', help='Whether .spec file should be created or not')
-    parser.add_argument('--windowed', required=False, default=False, action='store_true', help='Whether generated executable is windowed or not')
-    parser.add_argument('--onefile', required=False, default=False, action='store_true', help='Whether generated executable is stored in a unique .exe or not')
+    parser.add_argument(
+        '--generate-spec',
+        required=False, default=False, action='store_true', help='Whether .spec file should be created or not')
+    parser.add_argument(
+        '--windowed',
+        required=False, default=False, action='store_true', help='Whether generated executable is windowed or not')
+    parser.add_argument(
+        '--onefile',
+        required=False,
+        default=False, action='store_true', help='Whether generated executable is stored in a unique .exe or not')
     args = parser.parse_args()
 
     if args.generate_spec:
@@ -101,7 +108,9 @@ if __name__ == '__main__':
 
     spec_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'launcher.spec')
     if not os.path.isfile(spec_file):
-        raise RuntimeError('Launcher Spec file does not exists. Please execute generate_launcher using --generate-spec argument to generate Launcher Spec File')
+        raise RuntimeError(
+            'Launcher Spec file does not exists. Please execute generate_launcher using --generate-spec '
+            'argument to generate Launcher Spec File')
 
     pyinstaller_exe = os.path.join(os.path.dirname(sys.executable), 'pyinstaller.exe')
     if not os.path.isfile(pyinstaller_exe):

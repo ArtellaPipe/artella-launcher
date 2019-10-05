@@ -362,7 +362,7 @@ class ArtellaLauncher(QObject, object):
                 f for f in os.listdir(splash_dir) if f.startswith('splash') and os.path.isfile(
                     os.path.join(splash_dir, f))]
             if splash_files:
-                splash_index = random.randint(0, len(splash_files)-1)
+                splash_index = random.randint(0, len(splash_files) - 1)
                 splash_name, splash_extension = os.path.splitext(splash_files[splash_index])
                 splash_pixmap = self.resource.pixmap(splash_name, extension=splash_extension[1:])
             else:
