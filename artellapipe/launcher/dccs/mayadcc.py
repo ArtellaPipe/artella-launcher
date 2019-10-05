@@ -47,7 +47,7 @@ def get_executables_from_installation_path(installation_path):
 
 def get_installation_paths(maya_versions):
     """
-    Returns the installation paths folder where Maya is located in the user compoater
+    Returns the installation paths folder where Maya is located in the user computer
     :param maya_versions: list(str)
     :return: str
     """

@@ -105,6 +105,18 @@ def get_logging_config():
     return os.path.normpath(os.path.join(os.path.dirname(__file__), '__logging__.ini'))
 
 
+def get_logging_level():
+    """
+    Returns logging level to use
+    :return: str
+    """
+
+    if os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', None):
+        return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL')
+
+    return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', 'WARNING')
+
+
 def get_dccs_path():
     """
     Returns path where DCCs are located
