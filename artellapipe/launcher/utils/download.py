@@ -21,8 +21,7 @@ import traceback
 try:
     from urllib2 import Request, urlopen
 except ImportError:
-    from urllib import urlopen
-    from urllib.request import Request
+    from urllib.request import Request, urlopen
 
 from Qt.QtWidgets import *
 
