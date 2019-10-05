@@ -42,7 +42,16 @@ logger.setLevel(artellapipe.launcher.get_logging_level())
 
 
 class DccData(object):
-    def __init__(self, name, icon, enabled, default_version, supported_versions, installation_paths, departments, plugins, launch_fn=None):
+    def __init__(self,
+                 name,
+                 icon,
+                 enabled,
+                 default_version,
+                 supported_versions,
+                 installation_paths,
+                 departments,
+                 plugins,
+                 launch_fn=None):
         super(DccData, self).__init__()
 
         self.name = name
@@ -190,7 +199,8 @@ class ArtellaLauncher(QObject, object):
 
         self._console = console.ArtellaLauncherConsole(logger=self.logger)
         self._console.setWindowFlags(Qt.FramelessWindowHint)
-        self._config = config.create_config(launcher_name=self.name.replace(' ', ''), console=None, window=self, dcc_install_path=None)
+        self._config = config.create_config(
+            launcher_name=self.name.replace(' ', ''), console=None, window=self, dcc_install_path=None)
         self._updater = self.UPDATER_CLASS(project=self.project, launcher=self)
 
         dcc_selector = self.DCC_SELECTOR_CLASS(launcher=self)
@@ -227,16 +237,19 @@ class ArtellaLauncher(QObject, object):
         """
 
         if not self.LAUNCHER_CONFIG_PATH or not os.path.isfile(self.LAUNCHER_CONFIG_PATH):
-            logger.error('Launcher Configuration File for Artella Launcher not found! {}'.format(self.LAUNCHER_CONFIG_PATH))
+            logger.error(
+                'Launcher Configuration File for Artella Launcher not found! {}'.format(self.LAUNCHER_CONFIG_PATH))
             return
 
         with open(self.LAUNCHER_CONFIG_PATH, 'r') as f:
             launcher_config_data = json.load(f)
         if not launcher_config_data:
-            logger.error('Launcher Configuration File for Artella Project is empty! {}'.format(self.LAUNCHER_CONFIG_PATH))
+            logger.error(
+                'Launcher Configuration File for Artella Project is empty! {}'.format(self.LAUNCHER_CONFIG_PATH))
             return
 
-        self._name = launcher_config_data.get(defines.ARTELLA_CONFIG_LAUNCHER_NAME, defines.ARTELLA_DEFAULT_LAUNCHER_NAME)
+        self._name = launcher_config_data.get(
+            defines.ARTELLA_CONFIG_LAUNCHER_NAME, defines.ARTELLA_DEFAULT_LAUNCHER_NAME)
         self._version = launcher_config_data.get(defines.ARTELLA_CONFIG_LAUNCHER_VERSION, defines.DEFAULT_VERSION)
         dccs = launcher_config_data.get(defines.LAUNCHER_DCCS_ATTRIBUTE_NAME, dict())
         for dcc_name, dcc_data in dccs.items():
@@ -263,10 +276,13 @@ class ArtellaLauncher(QObject, object):
 
         for dcc_name, dcc_data in self._dccs.items():
             if dcc_data.enabled and not dcc_data.supported_versions:
-                logger.warning('{0} DCC enabled but no supported versions found in launcher settings. {0} DCC has been disabled!'.format(dcc_name.title()))
+                logger.warning(
+                    '{0} DCC enabled but no supported versions found in launcher settings. '
+                    '{0} DCC has been disabled!'.format(dcc_name.title()))
 
             try:
-                dcc_module = importlib.import_module('artellalauncher.artelladccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
+                dcc_module = importlib.import_module(
+                    'artellalauncher.artelladccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
             except ImportError:
                 logger.warning('DCC Python module {}dcc not found!'.format(dcc_name.lower().replace(' ', '')))
                 continue
@@ -342,7 +358,8 @@ class ArtellaLauncher(QObject, object):
         splash_path = self.resource.get('images', 'splash.png')
         if not os.path.isfile(splash_path):
             splash_dir = os.path.dirname(splash_path)
-            splash_files = [f for f in os.listdir(splash_dir) if f.startswith('splash') and os.path.isfile(os.path.join(splash_dir, f))]
+            splash_files = [f for f in os.listdir(splash_dir) if f.startswith('splash') and
+                            os.path.isfile(os.path.join(splash_dir, f))]
             if splash_files:
                 splash_index = random.randint(0, len(splash_files)-1)
                 splash_name, splash_extension = os.path.splitext(splash_files[splash_index])
@@ -375,7 +392,10 @@ class ArtellaLauncher(QObject, object):
         self._splash.setLayout(self.main_layout)
         progress_colors = self._updater.progress_colors
         self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet("QProgressBar {border: 0px solid grey; border-radius:4px; padding:0px} QProgressBar::chunk {background: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 rgb(" + str(progress_colors[0]) + "), stop: 1 rgb(" + str(progress_colors[1]) + ")); }")
+        self.progress_bar.setStyleSheet(
+            "QProgressBar {border: 0px solid grey; border-radius:4px; padding:0px} "
+            "QProgressBar::chunk {background: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 "
+            "rgb(" + str(progress_colors[0]) + "), stop: 1 rgb(" + str(progress_colors[1]) + ")); }")
         self.main_layout.addWidget(self.progress_bar)
         self.progress_bar.setMaximum(6)
         self.progress_bar.setTextVisible(False)
@@ -442,11 +462,17 @@ class ArtellaLauncher(QObject, object):
 
         try:
             if not selected_dcc:
-                qtutils.show_warning(None, 'DCC installations not found', '{} Launcher cannot found any DCC installed in your computer.'.format(self.name))
+                qtutils.show_warning(
+                    None, 'DCC installations not found',
+                    '{} Launcher cannot found any DCC installed in your computer.'.format(self.name))
                 sys.exit()
 
             if selected_dcc not in self._dccs:
-                qtutils.show_warning(None, '{} not found in your computer'.format(selected_dcc.title()), '{} Launcher cannot launch {} because no version is installed in your computer.'.format(self.name, selected_dcc.title()))
+                qtutils.show_warning(
+                    None,
+                    '{} not found in your computer'.format(
+                        selected_dcc.title()), '{} Launcher cannot launch {} because no version is '
+                                               'installed in your computer.'.format(self.name, selected_dcc.title()))
                 sys.exit()
 
             installation_paths = self._dccs[selected_dcc].installation_paths
@@ -454,7 +480,12 @@ class ArtellaLauncher(QObject, object):
                 return
 
             if selected_version not in installation_paths:
-                qtutils.show_warning(None, '{} {} installation path not found'.format(selected_dcc.title(), selected_version), '{} Launcher cannot launch {} {} because it is not installed in your computer.'.format(self.name, selected_dcc.title(), selected_version))
+                qtutils.show_warning(
+                    None,
+                    '{} {} installation path not found'.format(
+                        selected_dcc.title(), selected_version),
+                    '{} Launcher cannot launch {} {} because it is not installed in your computer.'.format(
+                        self.name, selected_dcc.title(), selected_version))
                 return
 
             installation_path = installation_paths[selected_version]
@@ -468,17 +499,22 @@ class ArtellaLauncher(QObject, object):
             self._progress_text.setText('Creating {} Launcher Configuration ...'.format(self.name))
             self._console.write('> Creating {} Launcher Configuration ...'.format(self.name))
             QApplication.instance().processEvents()
-            cfg = config.create_config(launcher_name=self.name.replace(' ', ''), console=self._console, window=self, dcc_install_path=installation_path)
+            cfg = config.create_config(
+                launcher_name=self.name.replace(' ', ''),
+                console=self._console, window=self, dcc_install_path=installation_path)
             if not cfg:
                 self._splash.close()
                 self._console.close()
-                qtutils.show_warning(None, '{} location not found'.format(selected_dcc.title()), '{} Launcher cannot launch {}!'.format(self.name, selected_dcc.title()))
+                qtutils.show_warning(
+                    None, '{} location not found'.format(
+                        selected_dcc.title()), '{} Launcher cannot launch {}!'.format(self.name, selected_dcc.title()))
                 return
             QApplication.instance().processEvents()
             self._config = cfg
 
             parser = argparse.ArgumentParser(
-                description='{} Launcher allows to setup a custom initialization for DCCs. This allows to setup specific paths in an easy way.'.format(self.name)
+                description='{} Launcher allows to setup a custom initialization for DCCs.'
+                            ' This allows to setup specific paths in an easy way.'.format(self.name)
             )
             parser.add_argument(
                 '-e', '--edit',
@@ -515,7 +551,9 @@ class ArtellaLauncher(QObject, object):
 
             install_path = cfg.value(self._updater.envvar_name)
             if not install_path or not os.path.exists(install_path):
-                self._set_text('Current installation path does not exists: {}. Reinstalling {} Tools ...'.format(install_path, self.name))
+                self._set_text(
+                    'Current installation path does not exists: {}. Reinstalling {} Tools ...'.format(
+                        install_path, self.name))
                 install_path = self.set_installation_path()
                 if not install_path:
                     sys.exit()
@@ -523,7 +561,11 @@ class ArtellaLauncher(QObject, object):
                 install_path = path_utils.clean_path(os.path.abspath(install_path))
                 id_path = path_utils.clean_path(self.project.id_path)
                 if id_path in install_path:
-                    qtutils.show_warning(None, 'Selected installation folder is not valid!', 'Folder {} is not a valid installation folder. Please select a folder that is not inside Artella Project folder please!'.format(install_path))
+                    qtutils.show_warning(
+                        None,
+                        'Selected installation folder is not valid!',
+                        'Folder {} is not a valid installation folder. '
+                        'Please select a folder that is not inside Artella Project folder please!'.format(install_path))
                     sys.exit()
 
                 cfg.setValue(self._updater.envvar_name, path_utils.clean_path(os.path.abspath(install_path)))
@@ -554,7 +596,7 @@ class ArtellaLauncher(QObject, object):
             self._updater.raise_()
             QApplication.instance().processEvents()
             need_to_update = self._updater.check_tools_version()
-            os.environ[self.get_clean_name()+'_show'] = 'show'
+            os.environ[self.get_clean_name() + '_show'] = 'show'
 
             self._updater.close()
             self._updater.progress_bar.setValue(0)
@@ -579,7 +621,9 @@ class ArtellaLauncher(QObject, object):
             try:
                 import spigot
             except ImportError:
-                self._console.write_error('Impossible to import Artella Python modules! Maybe Artella is not installed properly. Contact TD please!')
+                self._console.write_error(
+                    'Impossible to import Artella Python modules! Maybe Artella is not installed properly. '
+                    'Contact TD please!')
                 return
 
             launch_fn = self._dccs[selected_dcc].launch_fn
@@ -609,4 +653,3 @@ class ArtellaLauncher(QObject, object):
                     break
 
         launch_fn(exec_=exec_, setup_path=setup_path)
-

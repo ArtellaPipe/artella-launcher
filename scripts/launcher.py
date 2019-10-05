@@ -40,4 +40,3 @@ if __name__ == '__main__':
     launcher = launcher.PlotTwistLauncher(solstice.resource)
     launcher.init()
     app.exec_()
-

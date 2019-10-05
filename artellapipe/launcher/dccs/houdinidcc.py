@@ -97,11 +97,15 @@ def launch(exec_, setup_path):
 
     hou_dcc_path = os.path.join(setup_root, 'dcc', 'houdini')
     if not os.path.isdir(hou_dcc_path):
-        qtutils.show_warning(None, 'No valid Houdini DCC folder found!', 'Launcher cannot launch Houdini. Houdini DCC folder not found: {}!'.format(hou_dcc_path))
+        qtutils.show_warning(
+            None, 'No valid Houdini DCC folder found!',
+            'Launcher cannot launch Houdini. Houdini DCC folder not found: {}!'.format(hou_dcc_path))
         return None
     hou_bootstrap = os.path.join(hou_dcc_path, 'houdini_bootstrap.bat')
     if not os.path.isfile(hou_bootstrap):
-        qtutils.show_warning(None, 'No valid Houdini Bootstrap found!', 'Launcher cannot launch Houdini. Bootstrap not found: {}!'.format(hou_bootstrap))
+        qtutils.show_warning(
+            None, 'No valid Houdini Bootstrap found!',
+            'Launcher cannot launch Houdini. Bootstrap not found: {}!'.format(hou_bootstrap))
         return None
     cmd = [hou_bootstrap]
     cmd.extend([exec_, hou_dcc_path, setup_path])

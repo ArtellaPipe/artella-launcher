@@ -37,7 +37,7 @@ def chunk_report(bytes_so_far, total_size, console, updater=None):
     """
 
     percent = float(bytes_so_far) / total_size
-    percent = round(percent*100, 2)
+    percent = round(percent * 100, 2)
     if updater:
         updater.progress_bar.setValue(percent)
     console.write("Downloaded %d of %d bytes (%0.2f%%)\r" % (bytes_so_far, total_size, percent))
@@ -93,7 +93,8 @@ def download_file(filename, destination, console=None, updater=None):
             os.makedirs(dst_folder)
 
         hdr = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) '
+                          'Chrome/23.0.1271.64 Safari/537.11',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
             'Accept-Encoding': 'none',

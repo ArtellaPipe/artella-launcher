@@ -27,7 +27,7 @@ def get_executables_from_installation_path(installation_path):
 
     if os.path.exists(installation_path):
         nuke_files = os.listdir(installation_path)
-        houdini_ex = os.path.basename(installation_path).split('v')[0]+'.exe'
+        houdini_ex = os.path.basename(installation_path).split('v')[0] + '.exe'
         if houdini_ex in nuke_files:
             return os.path.join(installation_path, houdini_ex)
 

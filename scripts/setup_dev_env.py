@@ -20,15 +20,32 @@ import subprocess
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Generate Python Virtual Environment to generate launcher')
-    parser.add_argument('--name', required=False, default='artella_dev', help='Name of the Python environment')
-    parser.add_argument('--clean', required=False, default=False, action='store_true', help='Whether to delete already created venv')
-    parser.add_argument('--clean-after', required=False, default=False, action='store_true', help='Whether to delete venv after process is completed')
-    parser.add_argument('--update', required=False, default=False, action='store_true', help='Whether update venv requirements')
-    parser.add_argument('--generate-launcher', required=False, default=False, action='store_true', help='Whether to generate launcher using venv')
-    parser.add_argument('--generate-spec', required=False, default=False, action='store_true', help='Whether .spec file should be created or not')
-    parser.add_argument('--windowed', required=False, default=False, action='store_true', help='Whether generated executable is windowed or not')
-    parser.add_argument('--onefile', required=False, default=False, action='store_true', help='Whether generated executable is stored in a unique .exe or not')
+    parser = argparse.ArgumentParser(
+        description='Generate Python Virtual Environment to generate launcher')
+    parser.add_argument(
+        '--name',
+        required=False, default='artella_dev', help='Name of the Python environment')
+    parser.add_argument(
+        '--clean',
+        required=False, default=False, action='store_true', help='Whether to delete already created venv')
+    parser.add_argument(
+        '--clean-after',
+        required=False, default=False, action='store_true', help='Whether to delete venv after process is completed')
+    parser.add_argument(
+        '--update', required=False, default=False, action='store_true', help='Whether update venv requirements')
+    parser.add_argument(
+        '--generate-launcher',
+        required=False, default=False, action='store_true', help='Whether to generate launcher using venv')
+    parser.add_argument(
+        '--generate-spec',
+        required=False, default=False, action='store_true', help='Whether .spec file should be created or not')
+    parser.add_argument(
+        '--windowed',
+        required=False, default=False, action='store_true', help='Whether generated executable is windowed or not')
+    parser.add_argument(
+        '--onefile',
+        required=False,
+        default=False, action='store_true', help='Whether generated executable is stored in a unique .exe or not')
     args = parser.parse_args()
 
     venv_name = args.name
@@ -38,7 +55,8 @@ if __name__ == '__main__':
         print('Python {} has no virtualenv installed!'.format(sys.executable))
         pip_exe = os.path.dirname(sys.executable) + os.sep + 'Scripts' + os.sep + 'pip.exe'
         if not os.path.isfile(pip_exe):
-            raise RuntimeError('pip is not available in your Python installation: {}. Aborting ...'.format(sys.executable))
+            raise RuntimeError(
+                'pip is not available in your Python installation: {}. Aborting ...'.format(sys.executable))
         print('>>> Installing virtualenv dependency ...')
         pip_cmd = '{} install virtualenv'.format(pip_exe)
         process = subprocess.Popen(pip_cmd)
@@ -62,7 +80,8 @@ if __name__ == '__main__':
 
     requirements_file = os.path.join(root_path, 'requirements.txt')
     if not os.path.isfile(requirements_file):
-        raise RuntimeError('Impossible to install dependencies because requirements.txt was not found: {}'.format(requirements_file))
+        raise RuntimeError(
+            'Impossible to install dependencies because requirements.txt was not found: {}'.format(requirements_file))
 
     venv_pip = os.path.join(venv_scripts, 'pip.exe')
 
@@ -76,7 +95,8 @@ if __name__ == '__main__':
     if args.generate_launcher:
         installer_py = os.path.join(root_path, 'generate_launcher.py')
         if not os.path.isfile(installer_py):
-            raise RuntimeError('Impossible to generate launcher because generate_launcher.py was not found: {}'.format(installer_py))
+            raise RuntimeError(
+                'Impossible to generate launcher because generate_launcher.py was not found: {}'.format(installer_py))
         installer_cmd = '"{}" "{}"'.format(venv_python, installer_py)
         if args.generate_spec:
             installer_cmd += ' --generate-spec'
