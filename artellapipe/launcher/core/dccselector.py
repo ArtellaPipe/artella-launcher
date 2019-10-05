@@ -146,7 +146,7 @@ class DCCSelector(window.ArtellaWindow, object):
         self._button_settings.setVisible(False)
 
         self.setMinimumWidth(450)
-        total_rows = int(math.ceil(self._departments['All'].count()/self.COLUMNS_COUNT))
+        total_rows = int(math.ceil(self._departments['All'].count() / self.COLUMNS_COUNT))
         minimum_height = (total_rows * 105) + 275
 
         self.setMinimumHeight(minimum_height)
@@ -336,7 +336,10 @@ class DCCSelector(window.ArtellaWindow, object):
         if install_path and os.path.isdir(install_path):
             dirs_to_remove = [os.path.join(install_path, self.launcher.project.get_clean_name())]
             project_name = self.launcher.project.name.title()
-            res = qtutils.show_question(self, 'Uninstalling {} Tools'.format(project_name), 'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(project_name, '\n\t'.join(dirs_to_remove)))
+            res = qtutils.show_question(
+                self, 'Uninstalling {} Tools'.format(project_name),
+                'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
+                    project_name, '\n\t'.join(dirs_to_remove)))
             if res == QMessageBox.Yes:
                 try:
                     for d in dirs_to_remove:
@@ -345,9 +348,15 @@ class DCCSelector(window.ArtellaWindow, object):
                         elif os.path.isfile(d):
                             os.remove(d)
                     self.launcher.config.setValue(self.launcher.updater.envvar_name, None)
-                    qtutils.show_info(self, '{} Tools uninstalled'.format(project_name), '{} Tools uninstalled successfully!'.format(project_name))
+                    qtutils.show_info(
+                        self,
+                        '{} Tools uninstalled'.format(
+                            project_name), '{} Tools uninstalled successfully!'.format(project_name))
                 except Exception as e:
-                    qtutils.show_error(self, 'Error during {} Tools uninstall process'.format(project_name), 'Error during {} Tools uninstall: {} | {}'.format(project_name, e, traceback.format_exc()))
+                    qtutils.show_error(
+                        self,
+                        'Error during {} Tools uninstall process'.format(project_name),
+                        'Error during {} Tools uninstall: {} | {}'.format(project_name, e, traceback.format_exc()))
         else:
             self.show_warning_message('{} tools are not installed! Launch any DCC first!'.format(self.launcher.name))
 
@@ -362,10 +371,19 @@ class DCCSelector(window.ArtellaWindow, object):
         if install_path and os.path.isdir(install_path):
             dirs_to_remove = [os.path.join(install_path, self.launcher.project.get_clean_name())]
             project_name = self.launcher.project.name.title()
-            res = qtutils.show_question(self, 'Uninstalling {} Tools'.format(project_name), 'Are you sure you want to uninstall {} Tools?'.format(project_name))
+            res = qtutils.show_question(
+                self,
+                'Uninstalling {} Tools'.format(project_name),
+                'Are you sure you want to uninstall {} Tools?'.format(project_name))
             if res == QMessageBox.Yes:
-                qtutils.show_warning(self, 'Important', 'You will need to remove following folders manually:\n\n{}'.format('\n\t'.join(dirs_to_remove)))
+                qtutils.show_warning(
+                    self,
+                    'Important',
+                    'You will need to remove following folders manually:\n\n{}'.format('\n\t'.join(dirs_to_remove)))
                 self.launcher.config.setValue(self.launcher.updater.envvar_name, None)
-                qtutils.show_info(self, '{} Tools uninstalled'.format(project_name), '{} Tools uninstalled successfully!'.format(project_name))
+                qtutils.show_info(
+                    self,
+                    '{} Tools uninstalled'.format(project_name),
+                    '{} Tools uninstalled successfully!'.format(project_name))
         else:
             self.show_warning_message('{} tools are not installed! Launch any DCC first!'.format(self.launcher.name))

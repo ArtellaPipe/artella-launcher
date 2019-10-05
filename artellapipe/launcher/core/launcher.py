@@ -358,8 +358,9 @@ class ArtellaLauncher(QObject, object):
         splash_path = self.resource.get('images', 'splash.png')
         if not os.path.isfile(splash_path):
             splash_dir = os.path.dirname(splash_path)
-            splash_files = [f for f in os.listdir(splash_dir) if f.startswith('splash') and
-                            os.path.isfile(os.path.join(splash_dir, f))]
+            splash_files = [
+                f for f in os.listdir(splash_dir) if f.startswith('splash') and os.path.isfile(
+                    os.path.join(splash_dir, f))]
             if splash_files:
                 splash_index = random.randint(0, len(splash_files)-1)
                 splash_name, splash_extension = os.path.splitext(splash_files[splash_index])
