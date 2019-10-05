@@ -348,7 +348,7 @@ class ArtellaLauncher(QObject, object):
                 splash_name, splash_extension = os.path.splitext(splash_files[splash_index])
                 splash_pixmap = self.resource.pixmap(splash_name, extension=splash_extension[1:])
             else:
-                splash_pixmap = resource.ResourceManager.instance().pixmap('splash')
+                splash_pixmap = resource.ResourceManager().pixmap('splash')
         else:
             splash_pixmap = self.resource.pixmap('splash')
 
@@ -390,21 +390,21 @@ class ArtellaLauncher(QObject, object):
 
         self.main_layout.addItem(QSpacerItem(0, 20))
 
-        artella_icon = resource.ResourceManager.instance().icon('artella')
+        artella_icon = resource.ResourceManager().icon('artella')
         artella_lbl = QLabel()
         artella_lbl.setFixedSize(QSize(52, 52))
         artella_lbl.setParent(self._splash)
         artella_lbl.move(self._splash.width() - artella_lbl.width(), 0)
         artella_lbl.setPixmap(artella_icon.pixmap(artella_icon.actualSize(QSize(48, 48))))
 
-        dcc_icon = resource.ResourceManager.instance().icon(dcc_name.lower())
+        dcc_icon = resource.ResourceManager().icon(dcc_name.lower())
         dcc_lbl = QLabel()
         dcc_lbl.setFixedSize(QSize(52, 52))
         dcc_lbl.setParent(self._splash)
         dcc_lbl.move(self._splash.width() - dcc_lbl.width(), 52)
         dcc_lbl.setPixmap(dcc_icon.pixmap(dcc_icon.actualSize(QSize(48, 48))))
 
-        console_icon = resource.ResourceManager.instance().icon('console')
+        console_icon = resource.ResourceManager().icon('console')
         console_btn = QPushButton('')
         console_btn.setFixedSize(QSize(42, 42))
         console_btn.setIconSize(QSize(38, 38))

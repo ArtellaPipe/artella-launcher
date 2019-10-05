@@ -68,15 +68,15 @@ class DCCButton(base.BaseWidget, object):
             theme = 'color'
             icon_name = dcc_name
 
-        icon_path = resource.ResourceManager.instance().get('icons', theme, '{}.png'.format(icon_name))
+        icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(icon_name))
         if not os.path.isfile(icon_path):
-            icon_path = resource.ResourceManager.instance().get('icons', theme, '{}.png'.format(icon_name))
+            icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(icon_name))
             if not os.path.isfile(icon_path):
-                dcc_icon = resource.ResourceManager.instance().icon('artella')
+                dcc_icon = resource.ResourceManager().icon('artella')
             else:
-                dcc_icon = resource.ResourceManager.instance().icon(icon_name, theme=theme)
+                dcc_icon = resource.ResourceManager().icon(icon_name, theme=theme)
         else:
-            dcc_icon = resource.ResourceManager.instance().icon(icon_name, theme=theme)
+            dcc_icon = resource.ResourceManager().icon(icon_name, theme=theme)
 
         self._title = QPushButton(self._dcc.name.title())
         self._title.setStyleSheet(

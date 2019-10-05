@@ -16,10 +16,6 @@ import os
 import sys
 import inspect
 
-from tpPyUtils import importer, path as path_utils
-
-from artellapipe.utils import resource
-
 # =================================================================================
 
 current_project = None
@@ -27,36 +23,37 @@ current_project = None
 # =================================================================================
 
 
-class ArtellaLauncher(importer.Importer, object):
-    def __init__(self):
-        super(ArtellaLauncher, self).__init__(module_name='artellapipe.launcher')
-
-    def get_module_path(self):
-        """
-        Returns path where tpNameIt module is stored
-        :return: str
-        """
-
-        try:
-            mod_dir = os.path.dirname(inspect.getframeinfo(inspect.currentframe()).filename)
-        except Exception:
-            try:
-                mod_dir = os.path.dirname(__file__)
-            except Exception:
-                try:
-                    import tpDccLib
-                    mod_dir = tpDccLib.__path__[0]
-                except Exception:
-                    return None
-
-        return mod_dir
-
-
 def init(do_reload=False):
     """
     Initializes module
     :param do_reload: bool, Whether to reload modules or not
     """
+
+    from tpPyUtils import importer
+
+    class ArtellaLauncher(importer.Importer, object):
+        def __init__(self):
+            super(ArtellaLauncher, self).__init__(module_name='artellapipe.launcher')
+
+        def get_module_path(self):
+            """
+            Returns path where tpNameIt module is stored
+            :return: str
+            """
+
+            try:
+                mod_dir = os.path.dirname(inspect.getframeinfo(inspect.currentframe()).filename)
+            except Exception:
+                try:
+                    mod_dir = os.path.dirname(__file__)
+                except Exception:
+                    try:
+                        import tpDccLib
+                        mod_dir = tpDccLib.__path__[0]
+                    except Exception:
+                        return None
+
+            return mod_dir
 
     packages_order = []
 
@@ -68,8 +65,9 @@ def init(do_reload=False):
 
     create_logger_directory()
 
+    from artellapipe.utils import resource
     resources_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'resources')
-    resource.ResourceManager.instance().register_resource(resources_path)
+    resource.ResourceManager().register_resource(resources_path)
 
 
 def update_paths():
@@ -99,6 +97,8 @@ def get_logging_config():
     :return: str
     """
 
+    create_logger_directory()
+
     return os.path.normpath(os.path.join(os.path.dirname(__file__), '__logging__.ini'))
 
 
@@ -108,7 +108,8 @@ def get_dccs_path():
     :return: str
     """
 
-    return path_utils.clean_path(os.path.join(os.path.dirname(__file__), 'dccs'))
+    from tpPyUtils import path
+    return path.clean_path(os.path.join(os.path.dirname(__file__), 'dccs'))
 
 
 def get_launcher_config_path():
@@ -117,8 +118,9 @@ def get_launcher_config_path():
     :return: str
     """
 
+    from tpPyUtils import path
     from artellapipe.launcher.core import defines
-    return path_utils.clean_path(os.path.join(os.path.dirname(__file__), defines.ARTELLA_LAUNCHER_CONFIG_FILE_NAME))
+    return path.clean_path(os.path.join(os.path.dirname(__file__), defines.ARTELLA_LAUNCHER_CONFIG_FILE_NAME))
 
 
 def get_updater_config_path():
@@ -127,5 +129,6 @@ def get_updater_config_path():
     :return: str
     """
 
+    from tpPyUtils import path
     from artellapipe.launcher.core import defines
-    return path_utils.clean_path(os.path.join(os.path.dirname(__file__), defines.ARTELLA_UPDATER_CONFIG_FILE_NAME))
+    return path.clean_path(os.path.join(os.path.dirname(__file__), defines.ARTELLA_UPDATER_CONFIG_FILE_NAME))

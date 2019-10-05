@@ -1,15 +1,32 @@
 language: python
+before_install:
+  - pip install pycodestyle
 install:
-- pip install -r requirements.txt
-- python setup.py install
+  - pip install -r requirements.txt
+  - python setup.py install
 script:
-- pytest
+  # Run pep8 on all .py files in all sub-folders
+  # (ignore "E402: module level import not at top of file" because of use case sys.path.append('..'); import <module>)
+  - find . -name \*.py -exec pycodestyle --max-line-length=120 --ignore=E402 {} +
+  - pytest --cov=artellapipe
+  - sphinx-apidoc -f -e -o docs/sphinx artellapipe
+  - sphinx-build -M html ./docs/sphinx ./
+after_success:
+  - coveralls
+  - cd html && touch .nojekyll && cd ../
 deploy:
-  skip_cleanup: true
-  provider: pypi
-  user: tpoveda
-  password:
-    secure: OiXnLGElj802ouh1MZe9UeKrAMuOLlPKVELrRoMH9VebYRKY8nUlnyI/yQGUkxbcJxLjKufWdnUMVWr/ZWBfd7Ae9INLk6ESiiEc0foroNrgSE4h9WKuejOeChGYX/82RrFf6iQHg3ar6Tk8LtFRjjt9Rb0uVaJutHjtEfVJoFL4rIel316/kDy/ZClBQd9lliOrJactSa7rPZ+VNR8En86TBKQ3KCRxGubWJo0I9xC2+VRpOVxXIq6X+NKAkRH/E+ON//kBh2UvlmoMSwh87yMqHeQ+1yl40lT+ZcURaYqua3sIOpnPMejoUHkcxmSKUjcvHzScD/Y1bHB8Vg+Eww6skJoQtzuJBKsE64Ep4UeJhEfnJ8/plCRSW1hY7pEJISOmAJfe5nHFIFOYs5pOjwwlesRXb6sBs8N39LEKiTTbCmRnN8ee2R9cx8NgO42vi2hiB9cDxNeCflBqv1PM23Z3NFDZBt9yp1PPIKvKD4odPXqYTLhHEdfwCzr/S1K9SWXBVUn4qShKK7fnduj1YVz0aQJJWdrhTr44sLVhaRugmL2WD/ug6tz9lMkubdlJEmHwQHLQc6QNDjaS2kwBQ2H9Oh98guSdVVq7V2GjddIoMBVHgXhzEpb18nt0q+gO2XIf6vTlICIB2cozMFl5XVVu5IUgQp+89e9Bg8miTqY=
-  on:
-    branch: master
-    tags: true
+  - provider: pages
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    keep_history: true
+    local_dir: html
+    on:
+      branch: master
+  - provider: pypi
+    skip_cleanup: true
+    user: tpoveda
+    password:
+      secure: kStjJ06ZgorVwc/wDSK8Lh3UketV/YGLzv9e/Rf6OQdhwEoS+wm2LaffD1i+i53TLyyh4HGQNsBzPDe37RoGnEW2DH8TSNpKcc56F7/pVSfRxdzzXsII3z2k48wfy6pdsfKVpCSJDsqQdtw1Nvhql1/TeW8ZmRDAzXIYn5INGBsEI5rKMxIDOc/ydOOoFutC/nCUQjkcYNSBA16528WSktWKC59f2XCeK8VgVFNo8AXpUaqe0WJiI1bxNVDjntTXJzt7BB2ohN86LOYFKcqK+JzM/edzl8WaCcqzMZQ2LbsbSMHhKzFYvzEQyyM4IhxnxwVG8KXxVtD1EVWBWmkYTpn+SWB1iswwOK0HtRYmr5FgHAtaHxehVU2aKrd0SxWlBubp1wrk77Jaz9c4yFTkadNh3J5F2n1/2X7JmNErUDAR++mbbxCLLhWBwbhabQxU0Y2b8Mk4ALRJ934Gm43v/OL06vEtFad43Ip7tGp74PZa1SoMxA11L3AOBgO+/TS4M5ANlUYnlCwDZSDAy3uAidY3fg+ZWy7JhGFbUIAitZyn4DOL9NBrFdXQnvbkHi/oWIKgMcTrhZhL4SlSuXnCSV5mCt6SFwsn3pnIeKNIxlz8MrmmUAuZ9Ak4dFvzEny3xPAe8jNt8XMB0EFsUfBO64AMW6pjZJOzqLZ7HtK4+ww=
+    on:
+      branch: master
+      tags: true
