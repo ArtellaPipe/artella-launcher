@@ -1,9 +1,11 @@
 # ===================================================================
-# artellalauncher requirements file
+# artellapipe-launcher requirements file
 # ===================================================================
-artellapipe-core
+Qt.py
 pathlib2
 requests
 packaging
 beautifulsoup4
 lxml
+tpPyUtils
+tpQtLib
