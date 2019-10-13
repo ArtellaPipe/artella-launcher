@@ -509,7 +509,8 @@ class ArtellaLauncher(QObject, object):
         #         self._console.close()
         #         qtutils.show_warning(
         #             None, '{} location not found'.format(
-        #                 selected_dcc.title()), '{} Launcher cannot launch {}!'.format(self.name, selected_dcc.title()))
+        #                 selected_dcc.title()),
+        #                 '{} Launcher cannot launch {}!'.format(self.name, selected_dcc.title()))
         #         return
         #     QApplication.instance().processEvents()
         #     self._config = cfg
@@ -567,7 +568,8 @@ class ArtellaLauncher(QObject, object):
         #                 None,
         #                 'Selected installation folder is not valid!',
         #                 'Folder {} is not a valid installation folder. '
-        #                 'Please select a folder that is not inside Artella Project folder please!'.format(install_path))
+        #                 'Please select a folder that is not inside Artella Project folder please!'.format(
+        #                 install_path))
         #             sys.exit()
         #
         #         cfg.setValue(self._updater.envvar_name, path_utils.clean_path(os.path.abspath(install_path)))
