@@ -1,0 +1,7 @@
+artellapipe\_launcher.launcher.core.updater module
+==================================================
+
+.. automodule:: artellapipe_launcher.launcher.core.updater
+   :members:
+   :undoc-members:
+   :show-inheritance:

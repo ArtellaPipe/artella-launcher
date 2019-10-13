@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>artellapipe_launcher &mdash; artellapipe-core 0.0.l documentation</title>
+  <title>artellapipe_launcher.launcher.dccs.substancepainterdcc module &mdash; artellapipe-core 0.0.l documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="artellapipe_launcher package" href="artellapipe_launcher.html" />
-    <link rel="prev" title="Welcome to artellapipe-core documentation!" href="index.html" /> 
+    <link rel="next" title="artellapipe_launcher.launcher.dccs.zbrushdcc module" href="artellapipe_launcher.launcher.dccs.zbrushdcc.html" />
+    <link rel="prev" title="artellapipe_launcher.launcher.dccs.substancedesignerdcc module" href="artellapipe_launcher.launcher.dccs.substancedesignerdcc.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -86,8 +86,15 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">artellapipe_launcher</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="artellapipe_launcher.html">artellapipe_launcher package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">artellapipe_launcher</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="artellapipe_launcher.html">artellapipe_launcher package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="artellapipe_launcher.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="artellapipe_launcher.launcher.html">artellapipe_launcher.launcher package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="artellapipe_launcher.html#module-artellapipe_launcher">Module contents</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -135,13 +142,21 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>artellapipe_launcher</li>
+          <li><a href="modules.html">artellapipe_launcher</a> &raquo;</li>
+        
+          <li><a href="artellapipe_launcher.html">artellapipe_launcher package</a> &raquo;</li>
+        
+          <li><a href="artellapipe_launcher.launcher.html">artellapipe_launcher.launcher package</a> &raquo;</li>
+        
+          <li><a href="artellapipe_launcher.launcher.dccs.html">artellapipe_launcher.launcher.dccs package</a> &raquo;</li>
+        
+      <li>artellapipe_launcher.launcher.dccs.substancepainterdcc module</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/artellapipe_launcher.launcher.dccs.substancepainterdcc.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -155,24 +170,24 @@
 
            <div itemprop="articleBody">
             
-  <div class="section" id="artellapipe-launcher">
-<h1>artellapipe_launcher<a class="headerlink" href="#artellapipe-launcher" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="artellapipe_launcher.html">artellapipe_launcher package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="artellapipe_launcher.html#subpackages">Subpackages</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="artellapipe_launcher.launcher.html">artellapipe_launcher.launcher package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="artellapipe_launcher.launcher.html#subpackages">Subpackages</a></li>
-<li class="toctree-l4"><a class="reference internal" href="artellapipe_launcher.launcher.html#module-artellapipe_launcher.launcher">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="artellapipe_launcher.html#module-artellapipe_launcher">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</div>
+  <div class="section" id="module-artellapipe_launcher.launcher.dccs.substancepainterdcc">
+<span id="artellapipe-launcher-launcher-dccs-substancepainterdcc-module"></span><h1>artellapipe_launcher.launcher.dccs.substancepainterdcc module<a class="headerlink" href="#module-artellapipe_launcher.launcher.dccs.substancepainterdcc" title="Permalink to this headline">¶</a></h1>
+<p>Module that contains functions to handle Substance Painter functionality</p>
+<dl class="function">
+<dt id="artellapipe_launcher.launcher.dccs.substancepainterdcc.get_executables_from_installation_path">
+<code class="sig-prename descclassname">artellapipe_launcher.launcher.dccs.substancepainterdcc.</code><code class="sig-name descname">get_executables_from_installation_path</code><span class="sig-paren">(</span><em class="sig-param">installation_path</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe_launcher.launcher.dccs.substancepainterdcc.get_executables_from_installation_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns Substance Painter executable from its installation path
+:param installation_path: str</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="artellapipe_launcher.launcher.dccs.substancepainterdcc.get_installation_paths">
+<code class="sig-prename descclassname">artellapipe_launcher.launcher.dccs.substancepainterdcc.</code><code class="sig-name descname">get_installation_paths</code><span class="sig-paren">(</span><em class="sig-param">painter_versions</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe_launcher.launcher.dccs.substancepainterdcc.get_installation_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the installation folder of Substance Painter
+:param painter_versions: list(str)
+:return:</p>
+</dd></dl>
+
 </div>
 
 
@@ -187,10 +202,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="artellapipe_launcher.html" class="btn btn-neutral float-right" title="artellapipe_launcher package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="artellapipe_launcher.launcher.dccs.zbrushdcc.html" class="btn btn-neutral float-right" title="artellapipe_launcher.launcher.dccs.zbrushdcc module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to artellapipe-core documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="artellapipe_launcher.launcher.dccs.substancedesignerdcc.html" class="btn btn-neutral float-left" title="artellapipe_launcher.launcher.dccs.substancedesignerdcc module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

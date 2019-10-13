@@ -1,0 +1,7 @@
+artellapipe\_launcher.launcher.dccs.houdinidcc module
+=====================================================
+
+.. automodule:: artellapipe_launcher.launcher.dccs.houdinidcc
+   :members:
+   :undoc-members:
+   :show-inheritance:
