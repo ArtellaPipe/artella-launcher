@@ -5,11 +5,9 @@ install:
   - pip install -r requirements.txt
   - python setup.py install
 script:
-  # Run pep8 on all .py files in all sub-folders
-  # (ignore "E402: module level import not at top of file" because of use case sys.path.append('..'); import <module>)
   - find . -name \*.py -exec pycodestyle --max-line-length=120 --ignore=E402 {} +
-  - pytest --cov=artellapipe
-  - sphinx-apidoc -f -e -o docs/sphinx artellapipe
+  - pytest --cov=artellapipe_launcher
+  - sphinx-apidoc -f -e -o docs/sphinx artellapipe_launcher
   - sphinx-build -M html ./docs/sphinx ./
 after_success:
   - coveralls
