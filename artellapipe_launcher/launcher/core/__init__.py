@@ -3,5 +3,5 @@ order = [
     'artellapipe_launcher.launcher.core.config',
     'artellapipe_launcher.launcher.core.updater',
     'artellapipe_launcher.launcher.core.dccselector',
-    'artellapipe_launcher.launcher.core.launhcer',
+    'artellapipe_launcher.launcher.core.launcher',
 ]

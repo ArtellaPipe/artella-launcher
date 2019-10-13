@@ -487,7 +487,7 @@ class ArtellaUpdater(base.BaseWidget, object):
                     if not version_info.startswith('__version__'):
                         installed_version = None
                     else:
-                        exec version_info
+                        exec(version_info)
                         installed_version = __version__
 
             if not installed_version:
