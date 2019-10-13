@@ -17,11 +17,7 @@ import platform
 import subprocess
 import logging
 
-import artellapipe_launcher.launcher
-
-# logging.config.fileConfig(artellapipe_launcher.launcher.get_logging_config(), disable_existing_loggers=False)
 LOGGER = logging.getLogger()
-# logger.setLevel(artellapipe_launcher.launcher.get_logging_level())
 
 
 DEFAULT_DCC = 'maya.exe'
