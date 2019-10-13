@@ -20,6 +20,7 @@ import random
 import argparse
 import importlib
 import traceback
+import logging
 import logging.config
 from distutils import util
 
@@ -32,13 +33,13 @@ from tpQtLib.core import qtutils
 from artellapipe.utils import resource, exceptions
 from artellapipe.core import artellalib
 
-import artellapipe.launcher
-from artellapipe.launcher.core import defines, config, updater, dccselector
-from artellapipe.launcher.widgets import console
+import artellapipe_launcher.launcher
+from artellapipe_launcher.launcher.core import defines, config, updater, dccselector
+from artellapipe_launcher.launcher.widgets import console
 
-logging.config.fileConfig(artellapipe.launcher.get_logging_config(), disable_existing_loggers=False)
-logger = logging.getLogger(__name__)
-logger.setLevel(artellapipe.launcher.get_logging_level())
+logging.config.fileConfig(artellapipe_launcher.launcher.get_logging_config(), disable_existing_loggers=False)
+LOGGER = logging.getLogger()
+LOGGER.setLevel(artellapipe_launcher.launcher.get_logging_level())
 
 
 class DccData(object):
@@ -84,9 +85,9 @@ class ArtellaLauncher(QObject, object):
 
     DCC_SELECTOR_CLASS = dccselector.DCCSelector
     UPDATER_CLASS = updater.ArtellaUpdater
-    LAUNCHER_CONFIG_PATH = artellapipe.launcher.get_launcher_config_path()
+    LAUNCHER_CONFIG_PATH = artellapipe_launcher.launcher.get_launcher_config_path()
 
-    def __init__(self, project, resource):
+    def __init__(self, project):
         super(ArtellaLauncher, self).__init__()
 
         self._logger = None
@@ -97,7 +98,6 @@ class ArtellaLauncher(QObject, object):
         self._dccs = dict()
         self._splash = None
         self._updater = None
-        self._resource = resource
         self._project = project
 
         self.init_config()
@@ -128,7 +128,11 @@ class ArtellaLauncher(QObject, object):
         :return: str
         """
 
-        return self._resource.icon(self._name.lower().replace(' ', ''), theme=None)
+        icon = resource.ResourceManager().icon(self._name.lower().replace(' ', ''), theme='logos', key='launcher')
+        if not icon:
+            icon = resource.ResourceManager().icon(self._name.lower().replace(' ', ''), theme='logos')
+
+        return icon
 
     @property
     def config(self):
@@ -138,15 +142,6 @@ class ArtellaLauncher(QObject, object):
         """
 
         return self._config
-
-    @property
-    def resource(self):
-        """
-        Returns the resource of the Artella launcher
-        :return: Resource
-        """
-
-        return self._resource
 
     @property
     def project(self):
@@ -237,14 +232,16 @@ class ArtellaLauncher(QObject, object):
         """
 
         if not self.LAUNCHER_CONFIG_PATH or not os.path.isfile(self.LAUNCHER_CONFIG_PATH):
-            logger.error(
-                'Launcher Configuration File for Artella Launcher not found! {}'.format(self.LAUNCHER_CONFIG_PATH))
-            return
+            error_msg = 'Launcher Configuration File for Artella Launcher not found! {}'.format(
+                self.LAUNCHER_CONFIG_PATH)
+            LOGGER.error(error_msg)
+            exceptions.capture_exception(error_msg)
+        LOGGER.info('Launcher Configuration File found: {}!'.format(self.LAUNCHER_CONFIG_PATH))
 
         with open(self.LAUNCHER_CONFIG_PATH, 'r') as f:
             launcher_config_data = json.load(f)
         if not launcher_config_data:
-            logger.error(
+            LOGGER.error(
                 'Launcher Configuration File for Artella Project is empty! {}'.format(self.LAUNCHER_CONFIG_PATH))
             return
 
@@ -271,20 +268,20 @@ class ArtellaLauncher(QObject, object):
             )
 
         if not self._dccs:
-            logger.warning('No DCCs enabled!')
+            LOGGER.warning('No DCCs enabled!')
             return
 
         for dcc_name, dcc_data in self._dccs.items():
             if dcc_data.enabled and not dcc_data.supported_versions:
-                logger.warning(
+                LOGGER.warning(
                     '{0} DCC enabled but no supported versions found in launcher settings. '
                     '{0} DCC has been disabled!'.format(dcc_name.title()))
 
             try:
                 dcc_module = importlib.import_module(
-                    'artellalauncher.artelladccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
+                    'artellapipe_launcher.launcher.dccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
             except ImportError:
-                logger.warning('DCC Python module {}dcc not found!'.format(dcc_name.lower().replace(' ', '')))
+                LOGGER.warning('DCC Python module {}dcc not found!'.format(dcc_name.lower().replace(' ', '')))
                 continue
 
             if not dcc_data.enabled:
@@ -301,7 +298,7 @@ class ArtellaLauncher(QObject, object):
             if hasattr(dcc_module, fn_launch):
                 dcc_data.launch_fn = getattr(dcc_module, fn_launch)
             else:
-                logger.warning('DCC {} has not launch function implemented. Disabling it ...'.format(dcc_data.name))
+                LOGGER.warning('DCC {} has not launch function implemented. Disabling it ...'.format(dcc_data.name))
                 dcc_data.enabled = False
 
     def get_clean_name(self):
@@ -461,6 +458,8 @@ class ArtellaLauncher(QObject, object):
         :param selected_dcc: str
         """
 
+        LOGGER.warning('Launching {} | {}'.format(selected_dcc, selected_version))
+
         try:
             if not selected_dcc:
                 qtutils.show_warning(
@@ -480,177 +479,180 @@ class ArtellaLauncher(QObject, object):
             if not installation_paths:
                 return
 
-            if selected_version not in installation_paths:
-                qtutils.show_warning(
-                    None,
-                    '{} {} installation path not found'.format(
-                        selected_dcc.title(), selected_version),
-                    '{} Launcher cannot launch {} {} because it is not installed in your computer.'.format(
-                        self.name, selected_dcc.title(), selected_version))
-                return
+            print(installation_paths)
 
-            installation_path = installation_paths[selected_version]
-
-            self._setup_splash(selected_dcc)
-
-            self._console.move(self._splash.geometry().center())
-            self._console.move(300, 405)
-            self._console.show()
-
-            self._progress_text.setText('Creating {} Launcher Configuration ...'.format(self.name))
-            self._console.write('> Creating {} Launcher Configuration ...'.format(self.name))
-            QApplication.instance().processEvents()
-            cfg = config.create_config(
-                launcher_name=self.name.replace(' ', ''),
-                console=self._console, window=self, dcc_install_path=installation_path)
-            if not cfg:
-                self._splash.close()
-                self._console.close()
-                qtutils.show_warning(
-                    None, '{} location not found'.format(
-                        selected_dcc.title()), '{} Launcher cannot launch {}!'.format(self.name, selected_dcc.title()))
-                return
-            QApplication.instance().processEvents()
-            self._config = cfg
-
-            parser = argparse.ArgumentParser(
-                description='{} Launcher allows to setup a custom initialization for DCCs.'
-                            ' This allows to setup specific paths in an easy way.'.format(self.name)
-            )
-            parser.add_argument(
-                '-e', '--edit',
-                action='store_true',
-                help='Edit configuration file'
-            )
-
-            args = parser.parse_args()
-            if args.edit:
-                self._console.write('Opening {} Launcher Configuration file to edit ...'.format(self.name))
-                return cfg.edit()
-
-            exec_ = cfg.value('executable')
-
-            self.progress_bar.setValue(1)
-            QApplication.instance().processEvents()
-            time.sleep(1)
-
-            self._set_text('Updating Artella Paths ...')
-            artellalib.update_artella_paths()
-
-            self._set_text('Closing Artella App instances ...')
-            valid_close = artellalib.close_all_artella_app_processes(console=self._console)
-            self.progress_bar.setValue(2)
-            QApplication.instance().processEvents()
-            time.sleep(1)
-
-            if valid_close:
-                self._set_text('Launching Artella App ...')
-                artellalib.launch_artella_app()
-                self.progress_bar.setValue(3)
-                QApplication.instance().processEvents()
-                time.sleep(1)
-
-            install_path = cfg.value(self._updater.envvar_name)
-            if not install_path or not os.path.exists(install_path):
-                self._set_text(
-                    'Current installation path does not exists: {}. Reinstalling {} Tools ...'.format(
-                        install_path, self.name))
-                install_path = self.set_installation_path()
-                if not install_path:
-                    sys.exit()
-
-                install_path = path_utils.clean_path(os.path.abspath(install_path))
-                id_path = path_utils.clean_path(self.project.id_path)
-                if id_path in install_path:
-                    qtutils.show_warning(
-                        None,
-                        'Selected installation folder is not valid!',
-                        'Folder {} is not a valid installation folder. '
-                        'Please select a folder that is not inside Artella Project folder please!'.format(install_path))
-                    sys.exit()
-
-                cfg.setValue(self._updater.envvar_name, path_utils.clean_path(os.path.abspath(install_path)))
-
-            self.progress_bar.setValue(4)
-            self._set_text('Setting {} environment variables ...'.format(selected_dcc.title()))
-
-            env_var = self._updater.envvar_name
-            folders_to_register = self.project.get_folders_to_register(full_path=False)
-            if folders_to_register:
-                if os.environ.get('PYTHONPATH'):
-                    os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + cfg.value(env_var)
-                    for p in folders_to_register:
-                        p = path_utils.clean_path(os.path.join(install_path, p))
-                        logger.debug('Adding path to PYTHONPATH: {}'.format(p))
-                        os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + p
-                else:
-                    os.environ['PYTHONPATH'] = cfg.value(env_var)
-                    for p in folders_to_register:
-                        p = path_utils.clean_path(os.path.join(install_path, p))
-                        logger.debug('Adding path to PYTHONPATH: {}'.format(p))
-                        os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + p
-
-            self.progress_bar.setValue(5)
-            self._set_text('Checking {} tools version ...'.format(self.name.title()))
-            self.main_layout.addWidget(self._updater)
-            self._updater.show()
-            self._updater.raise_()
-            QApplication.instance().processEvents()
-            need_to_update = self._updater.check_tools_version()
-            os.environ[self.get_clean_name() + '_show'] = 'show'
-
-            self._updater.close()
-            self._updater.progress_bar.setValue(0)
-            QApplication.instance().processEvents()
-            time.sleep(1)
-
-            if need_to_update:
-                self.progress_bar.setValue(6)
-                self._set_text('Updating {} Tools ...'.format(self.name.title()))
-                self._updater.show()
-                QApplication.instance().processEvents()
-                self._updater.update_tools()
-                time.sleep(1)
-                self._updater.close()
-                self._updater.progress_bar.setValue(0)
-                QApplication.instance().processEvents()
-
-            self.console.write_ok('{} Tools setup completed, launching: {}'.format(self.name.title(), exec_))
-            QApplication.instance().processEvents()
-
-            # We need to import this here because this path maybe is not available until we update Artella paths
-            try:
-                import spigot
-            except ImportError:
-                self._console.write_error(
-                    'Impossible to import Artella Python modules! Maybe Artella is not installed properly. '
-                    'Contact TD please!')
-                return
-
-            launch_fn = self._dccs[selected_dcc].launch_fn
-            if not launch_fn:
-                self._console.write_error('Selected DCC: {} has no launch function!'.format(selected_dcc.name))
-                QApplication.instance().processEvents()
-                return
+        #     if selected_version not in installation_paths:
+        #         qtutils.show_warning(
+        #             None,
+        #             '{} {} installation path not found'.format(
+        #                 selected_dcc.title(), selected_version),
+        #             '{} Launcher cannot launch {} {} because it is not installed in your computer.'.format(
+        #                 self.name, selected_dcc.title(), selected_version))
+        #         return
+        #
+        #     installation_path = installation_paths[selected_version]
+        #
+        #     self._setup_splash(selected_dcc)
+        #
+        #     self._console.move(self._splash.geometry().center())
+        #     self._console.move(300, 405)
+        #     self._console.show()
+        #
+        #     self._progress_text.setText('Creating {} Launcher Configuration ...'.format(self.name))
+        #     self._console.write('> Creating {} Launcher Configuration ...'.format(self.name))
+        #     QApplication.instance().processEvents()
+        #     cfg = config.create_config(
+        #         launcher_name=self.name.replace(' ', ''),
+        #         console=self._console, window=self, dcc_install_path=installation_path)
+        #     if not cfg:
+        #         self._splash.close()
+        #         self._console.close()
+        #         qtutils.show_warning(
+        #             None, '{} location not found'.format(
+        #                 selected_dcc.title()), '{} Launcher cannot launch {}!'.format(self.name, selected_dcc.title()))
+        #         return
+        #     QApplication.instance().processEvents()
+        #     self._config = cfg
+        #
+        #     parser = argparse.ArgumentParser(
+        #         description='{} Launcher allows to setup a custom initialization for DCCs.'
+        #                     ' This allows to setup specific paths in an easy way.'.format(self.name)
+        #     )
+        #     parser.add_argument(
+        #         '-e', '--edit',
+        #         action='store_true',
+        #         help='Edit configuration file'
+        #     )
+        #
+        #     args = parser.parse_args()
+        #     if args.edit:
+        #         self._console.write('Opening {} Launcher Configuration file to edit ...'.format(self.name))
+        #         return cfg.edit()
+        #
+        #     exec_ = cfg.value('executable')
+        #
+        #     self.progress_bar.setValue(1)
+        #     QApplication.instance().processEvents()
+        #     time.sleep(1)
+        #
+        #     self._set_text('Updating Artella Paths ...')
+        #     artellalib.update_artella_paths()
+        #
+        #     self._set_text('Closing Artella App instances ...')
+        #     valid_close = artellalib.close_all_artella_app_processes(console=self._console)
+        #     self.progress_bar.setValue(2)
+        #     QApplication.instance().processEvents()
+        #     time.sleep(1)
+        #
+        #     if valid_close:
+        #         self._set_text('Launching Artella App ...')
+        #         artellalib.launch_artella_app()
+        #         self.progress_bar.setValue(3)
+        #         QApplication.instance().processEvents()
+        #         time.sleep(1)
+        #
+        #     install_path = cfg.value(self._updater.envvar_name)
+        #     if not install_path or not os.path.exists(install_path):
+        #         self._set_text(
+        #             'Current installation path does not exists: {}. Reinstalling {} Tools ...'.format(
+        #                 install_path, self.name))
+        #         install_path = self.set_installation_path()
+        #         if not install_path:
+        #             sys.exit()
+        #
+        #         install_path = path_utils.clean_path(os.path.abspath(install_path))
+        #         id_path = path_utils.clean_path(self.project.id_path)
+        #         if id_path in install_path:
+        #             qtutils.show_warning(
+        #                 None,
+        #                 'Selected installation folder is not valid!',
+        #                 'Folder {} is not a valid installation folder. '
+        #                 'Please select a folder that is not inside Artella Project folder please!'.format(install_path))
+        #             sys.exit()
+        #
+        #         cfg.setValue(self._updater.envvar_name, path_utils.clean_path(os.path.abspath(install_path)))
+        #
+        #     self.progress_bar.setValue(4)
+        #     self._set_text('Setting {} environment variables ...'.format(selected_dcc.title()))
+        #
+        #     env_var = self._updater.envvar_name
+        #     folders_to_register = self.project.get_folders_to_register(full_path=False)
+        #     if folders_to_register:
+        #         if os.environ.get('PYTHONPATH'):
+        #             os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + cfg.value(env_var)
+        #             for p in folders_to_register:
+        #                 p = path_utils.clean_path(os.path.join(install_path, p))
+        #                 LOGGER.debug('Adding path to PYTHONPATH: {}'.format(p))
+        #                 os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + p
+        #         else:
+        #             os.environ['PYTHONPATH'] = cfg.value(env_var)
+        #             for p in folders_to_register:
+        #                 p = path_utils.clean_path(os.path.join(install_path, p))
+        #                 LOGGER.debug('Adding path to PYTHONPATH: {}'.format(p))
+        #                 os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + p
+        #
+        #     self.progress_bar.setValue(5)
+        #     self._set_text('Checking {} tools version ...'.format(self.name.title()))
+        #     self.main_layout.addWidget(self._updater)
+        #     self._updater.show()
+        #     self._updater.raise_()
+        #     QApplication.instance().processEvents()
+        #     need_to_update = self._updater.check_tools_version()
+        #     os.environ[self.get_clean_name() + '_show'] = 'show'
+        #
+        #     self._updater.close()
+        #     self._updater.progress_bar.setValue(0)
+        #     QApplication.instance().processEvents()
+        #     time.sleep(1)
+        #
+        #     if need_to_update:
+        #         self.progress_bar.setValue(6)
+        #         self._set_text('Updating {} Tools ...'.format(self.name.title()))
+        #         self._updater.show()
+        #         QApplication.instance().processEvents()
+        #         self._updater.update_tools()
+        #         time.sleep(1)
+        #         self._updater.close()
+        #         self._updater.progress_bar.setValue(0)
+        #         QApplication.instance().processEvents()
+        #
+        #     self.console.write_ok('{} Tools setup completed, launching: {}'.format(self.name.title(), exec_))
+        #     QApplication.instance().processEvents()
+        #
+        #     # We need to import this here because this path maybe is not available until we update Artella paths
+        #     try:
+        #         import spigot
+        #     except ImportError:
+        #         self._console.write_error(
+        #             'Impossible to import Artella Python modules! Maybe Artella is not installed properly. '
+        #             'Contact TD please!')
+        #         return
+        #
+        #     launch_fn = self._dccs[selected_dcc].launch_fn
+        #     if not launch_fn:
+        #         self._console.write_error('Selected DCC: {} has no launch function!'.format(selected_dcc.name))
+        #         QApplication.instance().processEvents()
+        #         return
         except Exception as e:
             exceptions.capture_sentry_exception(e)
-            logger.error('Error while running {} launcher ...'.format(self.project.name.title()))
-            logger.error('{} | {}'.format(e, traceback.format_exc()))
+            LOGGER.error('Error while running {} launcher ...'.format(self.project.name.title()))
+            LOGGER.error('{} | {}'.format(e, traceback.format_exc()))
+            exceptions.capture_exception(e)
             return
 
-        self._splash.close()
-        self._console.close()
-
-        time.sleep(1)
-
-        # Search for userSetup.py file
-        setup_path = None
-        for dir, _, files in os.walk(install_path):
-            if setup_path:
-                break
-            for f in files:
-                if f.endswith('userSetup.py'):
-                    setup_path = path_utils.clean_path(os.path.join(dir, f))
-                    break
-
-        launch_fn(exec_=exec_, setup_path=setup_path)
+        # self._splash.close()
+        # self._console.close()
+        #
+        # time.sleep(1)
+        #
+        # # Search for userSetup.py file
+        # setup_path = None
+        # for dir, _, files in os.walk(install_path):
+        #     if setup_path:
+        #         break
+        #     for f in files:
+        #         if f.endswith('userSetup.py'):
+        #             setup_path = path_utils.clean_path(os.path.join(dir, f))
+        #             break
+        #
+        # launch_fn(exec_=exec_, setup_path=setup_path)

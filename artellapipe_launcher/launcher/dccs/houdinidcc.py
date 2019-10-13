@@ -15,15 +15,15 @@ __email__ = "tpovedatd@gmail.com"
 import os
 import platform
 import subprocess
-import logging.config
+import logging
 
 from tpQtLib.core import qtutils
 
-import artellapipe.launcher
+import artellapipe_launcher.launcher
 
-logging.config.fileConfig(artellapipe.launcher.get_logging_config(), disable_existing_loggers=False)
-logger = logging.getLogger(__name__)
-logger.setLevel(artellapipe.launcher.get_logging_level())
+# logging.config.fileConfig(artellapipe_launcher.launcher.get_logging_config(), disable_existing_loggers=False)
+LOGGER = logging.getLogger()
+# logger.setLevel(artellapipe_launcher.launcher.get_logging_level())
 
 
 DEFAULT_DCC = 'houdini.exe'
@@ -69,13 +69,13 @@ def get_installation_paths(houdini_versions):
             pass
 
     if not locations:
-        logger.warning('Houdini installations not found in your computer. Maya cannot be launched!')
+        LOGGER.warning('Houdini installations not found in your computer. Maya cannot be launched!')
         return None
 
     for houdini_version, houdini_location in locations.items():
         houdini_executable = get_executables_from_installation_path(houdini_location)
         if houdini_executable is None or not os.path.isfile(houdini_executable):
-            logger.warning('Houdini {} installation path: {} is not valid!'.format(houdini_version, houdini_location))
+            LOGGER.warning('Houdini {} installation path: {} is not valid!'.format(houdini_version, houdini_location))
             continue
 
         versions['{}'.format(houdini_version)] = houdini_executable

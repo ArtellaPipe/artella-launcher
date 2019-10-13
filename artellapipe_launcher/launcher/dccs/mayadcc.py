@@ -15,13 +15,13 @@ __email__ = "tpovedatd@gmail.com"
 import os
 import platform
 import subprocess
-import logging.config
+import logging
 
-import artellapipe.launcher
+import artellapipe_launcher.launcher
 
-logging.config.fileConfig(artellapipe.launcher.get_logging_config(), disable_existing_loggers=False)
-logger = logging.getLogger(__name__)
-logger.setLevel(artellapipe.launcher.get_logging_level())
+# logging.config.fileConfig(artellapipe_launcher.launcher.get_logging_config(), disable_existing_loggers=False)
+LOGGER = logging.getLogger()
+# logger.setLevel(artellapipe_launcher.launcher.get_logging_level())
 
 
 DEFAULT_DCC = 'maya.exe'
@@ -74,13 +74,13 @@ def get_installation_paths(maya_versions):
                     locations['{}'.format(maya_version)] = maya_location
 
     if not locations:
-        logger.warning('Maya installations not found in your computer. Maya cannot be launched!')
+        LOGGER.warning('Maya installations not found in your computer. Maya cannot be launched!')
         return None
 
     for maya_version, maya_location in locations.items():
         maya_executable = get_executables_from_installation_path(maya_location)
         if maya_executable is None or not os.path.isfile(maya_executable):
-            logger.warning('Maya {} installation path: {} is not valid!'.format(maya_version, maya_location))
+            LOGGER.warning('Maya {} installation path: {} is not valid!'.format(maya_version, maya_location))
             continue
 
         versions['{}'.format(maya_version)] = maya_executable

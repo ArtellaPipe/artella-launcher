@@ -6,6 +6,7 @@ pathlib2
 requests
 packaging
 beautifulsoup4
+pyinstaller
 lxml
 pytest
 pytest-cov

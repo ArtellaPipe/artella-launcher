@@ -19,7 +19,7 @@ import shutil
 import tempfile
 import traceback
 import requests
-import logging.config
+import logging
 from bs4 import BeautifulSoup
 from packaging.version import Version, InvalidVersion
 try:
@@ -34,18 +34,16 @@ from Qt.QtWidgets import *
 from tpQtLib.core import base
 from tpQtLib.core import qtutils
 
-import artellapipe.launcher
-from artellapipe.launcher.core import defines
-from artellapipe.launcher.utils import download
+import artellapipe_launcher.launcher
+from artellapipe_launcher.launcher.core import defines
+from artellapipe_launcher.launcher.utils import download
 
-logging.config.fileConfig(artellapipe.launcher.get_logging_config(), disable_existing_loggers=False)
-logger = logging.getLogger(__name__)
-logger.setLevel(artellapipe.launcher.get_logging_level())
+LOGGER = logging.getLogger()
 
 
 class ArtellaUpdater(base.BaseWidget, object):
 
-    UPDATER_CONFIG_PATH = artellapipe.launcher.get_updater_config_path()
+    UPDATER_CONFIG_PATH = artellapipe_launcher.launcher.get_updater_config_path()
 
     def __init__(self, launcher, project, parent=None):
 
@@ -153,14 +151,14 @@ class ArtellaUpdater(base.BaseWidget, object):
         """
 
         if not self.UPDATER_CONFIG_PATH or not os.path.isfile(self.UPDATER_CONFIG_PATH):
-            logger.error('Updater Configuration File for Artella Launcher not found! {}'.format(
+            LOGGER.error('Updater Configuration File for Artella Launcher not found! {}'.format(
                 self.LAUNCHER_CONFIG_PATH))
             return
 
         with open(self.UPDATER_CONFIG_PATH, 'r') as f:
             updater_config_data = json.load(f)
         if not updater_config_data:
-            logger.error('Updater Configuration File for Artella Project is empty! {}'.format(
+            LOGGER.error('Updater Configuration File for Artella Project is empty! {}'.format(
                 self.LAUNCHER_CONFIG_PATH))
             return
 
@@ -260,7 +258,7 @@ class ArtellaUpdater(base.BaseWidget, object):
             release_url = "https://github.com/{}/releases".format(repository)
             response = requests.get(release_url, headers={'Connection': 'close'})
             html = response.text
-            logger.debug('Parsing HTML of {} GitHub release page ...'.format(self.launcher.name.title()))
+            LOGGER.debug('Parsing HTML of {} GitHub release page ...'.format(self.launcher.name.title()))
             soup = BeautifulSoup(html, 'lxml')
 
             r = soup.find(class_='release-entry')
@@ -275,16 +273,16 @@ class ArtellaUpdater(base.BaseWidget, object):
                         the_version = sanitize_version(the_version)
                         if validate:
                             try:
-                                logger.debug("Trying version {}.".format(the_version))
+                                LOGGER.debug("Trying version {}.".format(the_version))
                                 v = Version(the_version)
                                 if not v.is_prerelease or pre:
-                                    logger.debug("Good version {}.".format(the_version))
+                                    LOGGER.debug("Good version {}.".format(the_version))
                                     version = the_version
                                     break_out = True
                                     break
                             except InvalidVersion:
                                 # move on to next thing to parse it
-                                logger.error("Encountered invalid version {}.".format(the_version))
+                                LOGGER.error("Encountered invalid version {}.".format(the_version))
                                 QApplication.instance().processEvents()
                         else:
                             version = the_version
@@ -292,7 +290,7 @@ class ArtellaUpdater(base.BaseWidget, object):
                     if break_out:
                         break
                 else:
-                    logger.debug("Inside formal release")
+                    LOGGER.debug("Inside formal release")
                     # formal release
                     if pre:
                         label_latest = r.find(class_='label-prerelease', recursive=False)
@@ -316,10 +314,10 @@ class ArtellaUpdater(base.BaseWidget, object):
                                                 description = description.text
                                     break
                                 else:
-                                    logger.debug("Found a pre-release version: {}. Trying next.".format(the_version))
+                                    LOGGER.debug("Found a pre-release version: {}. Trying next.".format(the_version))
                             except InvalidVersion:
                                 # move on to next thing to parse it
-                                logger.error("Encountered invalid version {}.".format(the_version))
+                                LOGGER.error("Encountered invalid version {}.".format(the_version))
                         else:
                             version = the_version
                             break
@@ -335,7 +333,7 @@ class ArtellaUpdater(base.BaseWidget, object):
             try:
                 Version(version)
             except InvalidVersion:
-                logger.error('Got invalid version: {}'.format(version))
+                LOGGER.error('Got invalid version: {}'.format(version))
                 return None
 
         # return the release if we've reached far enough:

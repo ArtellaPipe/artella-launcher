@@ -13,6 +13,9 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 
+# Defines environment variable name that can setup to define folder where configuration files are located
+ARTELLA_LAUNCHER_CONFIGURATION_DEV = 'ARTELLA_LAUNCHER_CONFIGURATIONS_FOLDER'
+
 # Defines the name of the configuration file used by Artella Launcher
 ARTELLA_LAUNCHER_CONFIG_FILE_NAME = 'launcher.json'
 

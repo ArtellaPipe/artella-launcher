@@ -16,7 +16,7 @@ import os
 import math
 import shutil
 import traceback
-import logging.config
+import logging
 
 from Qt.QtCore import *
 from Qt.QtWidgets import *
@@ -26,13 +26,13 @@ from tpPyUtils import folder as folder_utils
 from tpQtLib.core import base, qtutils
 from tpQtLib.widgets import grid, splitters
 
-import artellapipe.launcher
+import artellapipe_launcher.launcher
 from artellapipe.utils import resource
 from artellapipe.gui import window
 
-logging.config.fileConfig(artellapipe.launcher.get_logging_config(), disable_existing_loggers=False)
-logger = logging.getLogger(__name__)
-logger.setLevel(artellapipe.launcher.get_logging_level())
+# logging.config.fileConfig(artellapipe_launcher.launcher.get_logging_config(), disable_existing_loggers=False)
+LOGGER = logging.getLogger()
+# logger.setLevel(artellapipe_launcher.launcher.get_logging_level())
 
 
 class DCCButton(base.BaseWidget, object):
@@ -68,15 +68,9 @@ class DCCButton(base.BaseWidget, object):
             theme = 'color'
             icon_name = dcc_name
 
-        icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(icon_name))
-        if not os.path.isfile(icon_path):
-            icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(icon_name))
-            if not os.path.isfile(icon_path):
-                dcc_icon = resource.ResourceManager().icon('artella')
-            else:
-                dcc_icon = resource.ResourceManager().icon(icon_name, theme=theme)
-        else:
-            dcc_icon = resource.ResourceManager().icon(icon_name, theme=theme)
+        dcc_icon = resource.ResourceManager().icon(icon_name, theme=theme, extension='png')
+        if not dcc_icon:
+            dcc_icon = resource.ResourceManager().icon('artella')
 
         self._title = QPushButton(self._dcc.name.title())
         self._title.setStyleSheet(
@@ -202,16 +196,16 @@ class DCCSelector(window.ArtellaWindow, object):
         self.main_layout.addLayout(splitters.SplitterLayout())
         self.add_department('All')
 
-        logger.debug('Using Launcher: {}'.format(self.launcher))
-        logger.debug('DCCs found: {}'.format(self.launcher.dccs))
+        LOGGER.debug('Using Launcher: {}'.format(self.launcher))
+        LOGGER.debug('DCCs found: {}'.format(self.launcher.dccs))
 
         if self.launcher.dccs:
             for dcc_name, dcc_data in self.launcher.dccs.items():
-                logger.debug('DCC: {} | {}'.format(dcc_name, dcc_data))
+                LOGGER.debug('DCC: {} | {}'.format(dcc_name, dcc_data))
                 if not dcc_data.enabled:
                     continue
                 if not dcc_data.installation_paths:
-                    logger.warning('No installed versions found for DCC: {}'.format(dcc_name))
+                    LOGGER.warning('No installed versions found for DCC: {}'.format(dcc_name))
                     continue
                 dcc_departments = ['All']
                 dcc_departments.extend(dcc_data.departments)
@@ -221,8 +215,8 @@ class DCCSelector(window.ArtellaWindow, object):
                     dcc_btn.clicked.connect(self._on_dcc_selected)
                     self.add_dcc_to_department(department, dcc_btn)
 
-        search_folder_icon = resource.icon('search_folder')
-        uninstall_icon = resource.icon('uninstall')
+        search_folder_icon = resource.ResourceManager().icon('search_folder')
+        uninstall_icon = resource.ResourceManager().icon('uninstall')
         extra_buttons_lyt = QHBoxLayout()
         extra_buttons_lyt.setContentsMargins(2, 2, 2, 2)
         extra_buttons_lyt.setSpacing(5)
@@ -230,8 +224,8 @@ class DCCSelector(window.ArtellaWindow, object):
         extra_buttons_lyt.addItem(QSpacerItem(10, 0, QSizePolicy.Expanding, QSizePolicy.Preferred))
         self.open_folder_btn = QPushButton('Open Install folder')
         self.open_folder_btn.setIcon(search_folder_icon)
-        self.open_folder_btn.setMaximumWidth(120)
-        self.open_folder_btn.setMinimumWidth(120)
+        self.open_folder_btn.setMaximumWidth(140)
+        self.open_folder_btn.setMinimumWidth(140)
         self.open_folder_btn.setStyleSheet(
             """
             border-radius: 5px;

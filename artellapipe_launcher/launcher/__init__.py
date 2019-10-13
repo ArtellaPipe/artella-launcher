@@ -15,12 +15,17 @@ __email__ = "tpovedatd@gmail.com"
 import os
 import sys
 import inspect
+import logging.config
 
 # =================================================================================
 
 current_project = None
 
 # =================================================================================
+
+from tpPyUtils import path as path_utils
+
+from artellapipe_launcher.launcher.core import defines
 
 
 def init(do_reload=False):
@@ -30,13 +35,13 @@ def init(do_reload=False):
     """
 
     import sentry_sdk
-    sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788")
+    sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788", default_integrations=False)
 
     from tpPyUtils import importer
 
     class ArtellaLauncher(importer.Importer, object):
         def __init__(self):
-            super(ArtellaLauncher, self).__init__(module_name='artellapipe.launcher')
+            super(ArtellaLauncher, self).__init__(module_name='artellapipe_launcher.launcher')
 
         def get_module_path(self):
             """
@@ -70,7 +75,7 @@ def init(do_reload=False):
 
     from artellapipe.utils import resource
     resources_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'resources')
-    resource.ResourceManager().register_resource(resources_path)
+    resource.ResourceManager().register_resource(resources_path, 'launcher')
 
 
 def update_paths():
@@ -114,7 +119,7 @@ def get_logging_level():
     if os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', None):
         return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL')
 
-    return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', 'WARNING')
+    return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', 'DEBUG')
 
 
 def get_dccs_path():
@@ -123,8 +128,20 @@ def get_dccs_path():
     :return: str
     """
 
-    from tpPyUtils import path
-    return path.clean_path(os.path.join(os.path.dirname(__file__), 'dccs'))
+    return path_utils.clean_path(os.path.join(os.path.dirname(__file__), 'dccs'))
+
+
+def get_artella_launcher_configurations_folder():
+    """
+    Returns path where artella configurations folder are located
+    :return: str
+    """
+
+    if os.environ.get(defines.ARTELLA_LAUNCHER_CONFIGURATION_DEV, None):
+        return os.environ[defines.ARTELLA_LAUNCHER_CONFIGURATION_DEV]
+    else:
+        import artellapipe.config as cfg
+        return cfg.ArtellaConfigs().get_configurations_path()
 
 
 def get_launcher_config_path():
@@ -133,9 +150,9 @@ def get_launcher_config_path():
     :return: str
     """
 
-    from tpPyUtils import path
-    from artellapipe.launcher.core import defines
-    return path.clean_path(os.path.join(os.path.dirname(__file__), defines.ARTELLA_LAUNCHER_CONFIG_FILE_NAME))
+    cfg_path = get_artella_launcher_configurations_folder()
+
+    return path_utils.clean_path(os.path.join(cfg_path, defines.ARTELLA_LAUNCHER_CONFIG_FILE_NAME))
 
 
 def get_updater_config_path():
@@ -144,6 +161,9 @@ def get_updater_config_path():
     :return: str
     """
 
-    from tpPyUtils import path
-    from artellapipe.launcher.core import defines
-    return path.clean_path(os.path.join(os.path.dirname(__file__), defines.ARTELLA_UPDATER_CONFIG_FILE_NAME))
+    cfg_path = get_artella_launcher_configurations_folder()
+
+    return path_utils.clean_path(os.path.join(cfg_path, defines.ARTELLA_UPDATER_CONFIG_FILE_NAME))
+
+
+logging.config.fileConfig(get_logging_config(), disable_existing_loggers=False)

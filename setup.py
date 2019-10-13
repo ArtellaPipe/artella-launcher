@@ -1,5 +1,5 @@
 from setuptools import setup
 
-from artellapipe.launcher.__version__ import __version__
+from artellapipe_launcher.launcher.__version__ import __version__
 
 setup()
