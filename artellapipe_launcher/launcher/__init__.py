@@ -35,7 +35,10 @@ def init(do_reload=False):
     """
 
     import sentry_sdk
-    sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788", default_integrations=False)
+    try:
+        sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788")
+    except RuntimeError:
+        sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788", default_integrations=False)
 
     from tpPyUtils import importer
 

@@ -17,7 +17,6 @@ import platform
 import subprocess
 from pathlib2 import Path
 
-
 from Qt.QtCore import *
 
 
@@ -34,7 +33,7 @@ class ArtellaLauncherConfig(QSettings, object):
         super(ArtellaLauncherConfig, self).__init__(str(filename), QSettings.IniFormat, window)
         self.config_file = filename
         if console:
-            console.write('> {} Configuration File: {}\n'.format(window.name, filename))
+            console.write('> Configuration File: {}\n'.format(filename))
 
     def edit(self):
         """
@@ -80,6 +79,7 @@ def create_config(launcher_name, console, window, dcc_install_path, config_file=
 
     if config_file is None:
         config_file = get_system_config_directory(launcher_name=launcher_name, console=console)
+
     config = ArtellaLauncherConfig(filename=config_file, window=window, console=console)
 
     if not dcc_install_path:
