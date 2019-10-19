@@ -320,7 +320,7 @@ if __name__ == '__main__':
         help='Whether generated executable is stored in a unique .exe or not')
     parser.add_argument(
         '--dev',
-        required=False, default=False,  action='store_true',
+        required=False, default=False, action='store_true',
         help='Whether dev or production launcher should be build')
     args = parser.parse_args()
 
