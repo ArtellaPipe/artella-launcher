@@ -26,9 +26,14 @@ try:
 except ImportError:
     from urllib.request import Request, urlopen
 
-from Qt.QtCore import *
-from Qt.QtWidgets import *
-from Qt.QtGui import *
+try:
+    import PySide
+    from PySide.QtCore import *
+    from PySide.QtGui import *
+except ImportError:
+    from PySide2.QtCore import *
+    from PySide2.QtWidgets import *
+    from PySide.QtGui import *
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -42,8 +47,11 @@ class ArtellaUpdater(QWidget, object):
             parent=None):
         super(ArtellaUpdater, self).__init__(parent=parent)
 
-        self._project_name = project_name
-        self._repository = deployment_repository
+        self._config_data = self._read_config()
+
+        self._project_name = project_name if project_name else self._get_config('name')
+        self._repository = deployment_repository if deployment_repository else self._get_config('repository')
+        self._splash_path = splash_path if splash_path and os.path.isfile(splash_path) else self._get_config('splash')
         self._force_venv = force_venv
         self._venv_info = dict()
 
@@ -56,7 +64,6 @@ class ArtellaUpdater(QWidget, object):
         self._install_env_var = install_env_var if install_env_var else self._get_default_install_env_var()
         self._requirements_file_name = requirements_file_name if requirements_file_name else 'requirements.txt'
         self._deploy_tag = deploy_tag if deploy_tag else self._get_latest_deploy_tag()
-        self._splash_path = splash_path if splash_path else self._get_default_splash_path()
 
         self._setup_ui()
 
@@ -149,13 +156,43 @@ class ArtellaUpdater(QWidget, object):
 
         return True if process.returncode == 0 else False
 
-    def _get_default_splash_path(self):
+    def _read_config(self):
         """
-        Returns default path where splash image is located
+        Internal function that retrieves config data stored in executable
+        :return: dict
+        """
+
+        data = {}
+        config_file_name = 'config.json'
+        config_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'scripts', config_file_name)
+        if not os.path.isfile(config_path):
+            config_path = os.path.join(os.path.dirname(sys.executable), 'resources', config_file_name)
+            if not os.path.isfile(config_path):
+                config_path = os.path.join(sys._MEIPASS, 'resources', config_file_name)
+
+        if not os.path.isfile(config_path):
+            return data
+
+        try:
+            with open(config_path) as config_file:
+                data = json.load(config_file)
+        except RuntimeError:
+            pass
+
+        return data
+
+    def _get_config(self, config_name):
+        """
+        Returns configuration parameter stored in configuration, if exists
+        :param config_name: str
         :return: str
         """
 
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'images', 'app_splash.png')
+        if not self._config_data:
+            return None
+
+        return self._config_data.get(config_name, None)
 
     def _set_splash_text(self, new_text):
         self._progress_text.setText(new_text)
@@ -940,17 +977,24 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project_name', required=True)
-    parser.add_argument('--repository', required=True)
+    parser.add_argument('--project-name', required=False)
+    parser.add_argument('--repository', required=False)
     parser.add_argument('--environment', default='production')
-    parser.add_argument('--splash_path', required=False, default=None)
+    parser.add_argument('--splash-path', required=False, default=None)
     args = parser.parse_args()
 
-    new_app = ArtellaUpdater(
-        project_name=args.project_name,
-        deployment_repository=args.repository,
-        environment=args.environment,
-        splash_path=args.splash_path
-    )
-    new_app.init()
-    app.quit()
+    try:
+        new_app = ArtellaUpdater(
+            project_name=args.project_name,
+            deployment_repository=args.repository,
+            environment=args.environment,
+            splash_path=args.splash_path
+        )
+        new_app.init()
+    except Exception as exc:
+        msg = '{} | {}'.format(exc, traceback.format_exc())
+        LOGGER.exception(msg)
+        traceback.print_exc()
+        QMessageBox.critical(None, 'Error', msg)
+    finally:
+        app.quit()
