@@ -40,7 +40,8 @@ LOGGER = logging.getLogger()
 
 
 class DccData(object):
-    def __init__(self, name, icon, enabled, default_version, supported_versions, installation_paths, departments, plugins, launch_fn=None):
+    def __init__(self, name, icon, enabled, default_version, supported_versions,
+                 installation_paths, departments, plugins, launch_fn=None):
         super(DccData, self).__init__()
 
         self.name = name
@@ -384,10 +385,12 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
         for dcc_name, dcc_data in self._dccs.items():
             if dcc_data.enabled and not dcc_data.supported_versions:
-                LOGGER.warning('{0} DCC enabled but no supported versions found in launcher settings. {0} DCC has been disabled!'.format(dcc_name.title()))
+                LOGGER.warning('{0} DCC enabled but no supported versions found in launcher settings. '
+                               '{0} DCC has been disabled!'.format(dcc_name.title()))
 
             try:
-                dcc_module = importlib.import_module('artellapipe_launcher.launcher.dccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
+                dcc_module = importlib.import_module(
+                    'artellapipe_launcher.launcher.dccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
             except ImportError:
                 LOGGER.warning('DCC Python module {}dcc not found!'.format(dcc_name.lower().replace(' ', '')))
                 continue
@@ -433,7 +436,8 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
             if splash_files:
                 splash_index = random.randint(0, len(splash_files) - 1)
                 splash_name, splash_extension = os.path.splitext(splash_files[splash_index])
-                splash_pixmap = resource.ResourceManager().pixmap(splash_name, extension=splash_extension[1:], key='project')
+                splash_pixmap = resource.ResourceManager().pixmap(
+                    splash_name, extension=splash_extension[1:], key='project')
             else:
                 splash_pixmap = resource.ResourceManager().pixmap('splash')
         else:
@@ -463,7 +467,8 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         progress_colors = self._updater.progress_colors
         self.progress_bar = QProgressBar()
         self.progress_bar.setStyleSheet(
-            "QProgressBar {border: 0px solid grey; border-radius:4px; padding:0px} QProgressBar::chunk {background: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 rgb(" + str(
+            "QProgressBar {border: 0px solid grey; border-radius:4px; padding:0px} "
+            "QProgressBar::chunk {background: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 rgb(" + str(
                 progress_colors[0]) + "), stop: 1 rgb(" + str(progress_colors[1]) + ")); }")
         self.main_layout.addWidget(self.progress_bar)
         self.progress_bar.setMaximum(6)
@@ -538,7 +543,10 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         if install_path and os.path.isdir(install_path):
             dirs_to_remove = [os.path.join(install_path, self.launcher.project.get_clean_name())]
             project_name = self.launcher.project.name.title()
-            res = qtutils.show_question(self, 'Uninstalling {} Tools'.format(project_name), 'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(project_name, '\n\t'.join(dirs_to_remove)))
+            res = qtutils.show_question(
+                self, 'Uninstalling {} Tools'.format(project_name),
+                'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
+                    project_name, '\n\t'.join(dirs_to_remove)))
             if res == QMessageBox.Yes:
                 try:
                     for d in dirs_to_remove:
@@ -547,9 +555,13 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
                         elif os.path.isfile(d):
                             os.remove(d)
                     self.launcher.config.setValue(self.launcher.updater.envvar_name, None)
-                    qtutils.show_info(self, '{} Tools uninstalled'.format(project_name), '{} Tools uninstalled successfully!'.format(project_name))
+                    qtutils.show_info(
+                        self, '{} Tools uninstalled'.format(project_name),
+                        '{} Tools uninstalled successfully!'.format(project_name))
                 except Exception as e:
-                    qtutils.show_error(self, 'Error during {} Tools uninstall process'.format(project_name), 'Error during {} Tools uninstall: {} | {}'.format(project_name, e, traceback.format_exc()))
+                    qtutils.show_error(
+                        self, 'Error during {} Tools uninstall process'.format(project_name),
+                        'Error during {} Tools uninstall: {} | {}'.format(project_name, e, traceback.format_exc()))
         else:
             self.show_warning_message('{} tools are not installed! Launch any DCC first!'.format(self.launcher.name))
 
@@ -564,11 +576,17 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         if install_path and os.path.isdir(install_path):
             dirs_to_remove = [os.path.join(install_path, self.launcher.project.get_clean_name())]
             project_name = self.launcher.project.name.title()
-            res = qtutils.show_question(self, 'Uninstalling {} Tools'.format(project_name), 'Are you sure you want to uninstall {} Tools?'.format(project_name))
+            res = qtutils.show_question(
+                self, 'Uninstalling {} Tools'.format(project_name),
+                'Are you sure you want to uninstall {} Tools?'.format(project_name))
             if res == QMessageBox.Yes:
-                qtutils.show_warning(self, 'Important', 'You will need to remove following folders manually:\n\n{}'.format('\n\t'.join(dirs_to_remove)))
+                qtutils.show_warning(
+                    self, 'Important',
+                    'You will need to remove following folders manually:\n\n{}'.format('\n\t'.join(dirs_to_remove)))
                 self.launcher.config.setValue(self.launcher.updater.envvar_name, None)
-                qtutils.show_info(self, '{} Tools uninstalled'.format(project_name), '{} Tools uninstalled successfully!'.format(project_name))
+                qtutils.show_info(
+                    self, '{} Tools uninstalled'.format(project_name),
+                    '{} Tools uninstalled successfully!'.format(project_name))
         else:
             self.show_warning_message('{} tools are not installed! Launch any DCC first!'.format(self.launcher.name))
 
@@ -584,11 +602,16 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
         try:
             if not selected_dcc:
-                qtutils.show_warning(None, 'DCC installations not found', '{} Launcher cannot found any DCC installed in your computer.'.format(self.name))
+                qtutils.show_warning(
+                    None, 'DCC installations not found',
+                    '{} Launcher cannot found any DCC installed in your computer.'.format(self.name))
                 sys.exit()
 
             if selected_dcc not in self._dccs:
-                qtutils.show_warning(None, '{} not found in your computer'.format(selected_dcc.title()), '{} Launcher cannot launch {} because no version is installed in your computer.'.format(self.name, selected_dcc.title()))
+                qtutils.show_warning(
+                    None, '{} not found in your computer'.format(selected_dcc.title()),
+                    '{} Launcher cannot launch {} because no version is installed in your computer.'.format(
+                        self.name, selected_dcc.title()))
                 sys.exit()
 
             installation_paths = self._dccs[selected_dcc].installation_paths
@@ -596,7 +619,10 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
                 return
 
             if selected_version not in installation_paths:
-                qtutils.show_warning(None, '{} {} installation path not found'.format(selected_dcc.title(), selected_version), '{} Launcher cannot launch {} {} because it is not installed in your computer.'.format(self.name, selected_dcc.title(), selected_version))
+                qtutils.show_warning(
+                    None, '{} {} installation path not found'.format(selected_dcc.title(), selected_version),
+                    '{} Launcher cannot launch {} {} because it is not installed in your computer.'.format(
+                        self.name, selected_dcc.title(), selected_version))
                 return
 
             installation_path = installation_paths[selected_version]
@@ -610,17 +636,22 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
             self._progress_text.setText('Creating {} Launcher Configuration ...'.format(self._project.name.title()))
             self._updater.console.write('> Creating {} Launcher Configuration ...'.format(self._project.name.title()))
             QApplication.instance().processEvents()
-            cfg = config.create_config(launcher_name=self._project.get_clean_name(), console=self._updater.console, window=None, dcc_install_path=installation_path)
+            cfg = config.create_config(
+                launcher_name=self._project.get_clean_name(),
+                console=self._updater.console, window=None, dcc_install_path=installation_path)
             if not cfg:
                 self._splash.close()
                 self._updater.close()
-                qtutils.show_warning(None, '{} location not found'.format(selected_dcc.title()), '{} Launcher cannot launch {}!'.format(self._project.name.title(), selected_dcc.title()))
+                qtutils.show_warning(
+                    None, '{} location not found'.format(selected_dcc.title()),
+                    '{} Launcher cannot launch {}!'.format(self._project.name.title(), selected_dcc.title()))
                 return
             QApplication.instance().processEvents()
             self._config = cfg
 
             parser = argparse.ArgumentParser(
-                description='{} Launcher allows to setup a custom initialization for DCCs. This allows to setup specific paths in an easy way.'.format(self._project.name.title())
+                description='{} Launcher allows to setup a custom initialization for DCCs. '
+                            'This allows to setup specific paths in an easy way.'.format(self._project.name.title())
             )
             parser.add_argument(
                 '-e', '--edit',
@@ -630,7 +661,8 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
             args = parser.parse_args()
             if args.edit:
-                self._updater.write('Opening {} Launcher Configuration file to edit ...'.format(self._project.name.title()))
+                self._updater.write(
+                    'Opening {} Launcher Configuration file to edit ...'.format(self._project.name.title()))
                 return cfg.edit()
 
             exec_ = cfg.value('executable')
@@ -657,7 +689,9 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
             install_path = cfg.value(self._updater.envvar_name)
             if not install_path or not os.path.exists(install_path):
-                self._set_text('Current installation path does not exists: {}. Reinstalling {} Tools ...'.format(install_path, self._project.name.title()))
+                self._set_text(
+                    'Current installation path does not exists: {}. Reinstalling {} Tools ...'.format(
+                        install_path, self._project.name.title()))
                 install_path = self.set_installation_path()
                 if not install_path:
                     sys.exit()
@@ -665,7 +699,10 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
                 install_path = path_utils.clean_path(os.path.abspath(install_path))
                 id_path = path_utils.clean_path(self._project.id_path)
                 if id_path in install_path:
-                    qtutils.show_warning(None, 'Selected installation folder is not valid!', 'Folder {} is not a valid installation folder. Please select a folder that is not inside Artella Project folder please!'.format(install_path))
+                    qtutils.show_warning(
+                        None, 'Selected installation folder is not valid!',
+                        'Folder {} is not a valid installation folder. '
+                        'Please select a folder that is not inside Artella Project folder please!'.format(install_path))
                     sys.exit()
 
                 cfg.setValue(self._updater.envvar_name, path_utils.clean_path(os.path.abspath(install_path)))
@@ -714,19 +751,23 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         #         self._updater.progress_bar.setValue(0)
         #         QApplication.instance().processEvents()
         #
-        #     self._updater.console.write_ok('{} Tools setup completed, launching: {}'.format(self._project.name.title(), exec_))
+        #     self._updater.console.write_ok('{} Tools setup completed, launching: {}'.format(self._
+        #     project.name.title(), exec_))
         #     QApplication.instance().processEvents()
         #
         #     # We need to import this here because this path maybe is not available until we update Artella paths
         #     try:
         #         import spigot
         #     except ImportError:
-        #         self._updater.console.write_error('Impossible to import Artella Python modules! Maybe Artella is not installed properly. Contact TD please!')
+        #         self._updater.console.write_error(
+        #         'Impossible to import Artella Python modules!
+        #         Maybe Artella is not installed properly. Contact TD please!')
         #         return
         #
         #     launch_fn = self._dccs[selected_dcc].launch_fn
         #     if not launch_fn:
-        #         self._updater.console.write_error('Selected DCC: {} has no launch function!'.format(selected_dcc.name))
+        #         self._updater.console.write_error(
+        #         'Selected DCC: {} has no launch function!'.format(selected_dcc.name))
         #         QApplication.instance().processEvents()
         #         return
         except Exception as e:

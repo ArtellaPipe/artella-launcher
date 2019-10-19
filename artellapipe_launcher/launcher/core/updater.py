@@ -65,7 +65,8 @@ class ArtellaUpdater(base.BaseWidget, object):
 
         self._console = console.ArtellaLauncherConsole(logger=self._project.logger)
         self._console.setWindowFlags(Qt.FramelessWindowHint)
-        self._config = config.create_config(launcher_name=self._project.get_clean_name(), console=None, window=self, dcc_install_path=None)
+        self._config = config.create_config(
+            launcher_name=self._project.get_clean_name(), console=None, window=self, dcc_install_path=None)
 
     def closeEvent(self, event):
         self._console.close()
@@ -87,7 +88,10 @@ class ArtellaUpdater(base.BaseWidget, object):
         self._progress_bar.setMaximum(100)
         self._progress_bar.setTextVisible(False)
         if self.progress_colors:
-            self._progress_bar.setStyleSheet("QProgressBar {border: 0px solid grey; border-radius:4px; padding:0px} QProgressBar::chunk {background: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 rgb(" + str(self.progress_colors[0]) + "), stop: 1 rgb(" + str(self.progress_colors[1]) + ")); }")
+            self._progress_bar.setStyleSheet(
+                "QProgressBar {border: 0px solid grey; border-radius:4px; padding:0px} "
+                "QProgressBar::chunk {background: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 rgb(" + str(
+                    self.progress_colors[0]) + "), stop: 1 rgb(" + str(self.progress_colors[1]) + ")); }")
 
         self._progress_text = QLabel('Downloading {} Tools ...'.format(self._project.name.title()))
         self._progress_text.setAlignment(Qt.AlignCenter)
@@ -157,13 +161,15 @@ class ArtellaUpdater(base.BaseWidget, object):
         """
 
         if not self.UPDATER_CONFIG_PATH or not os.path.isfile(self.UPDATER_CONFIG_PATH):
-            LOGGER.error('Updater Configuration File for Artella Launcher not found! {}'.format(self.UPDATER_CONFIG_PATH))
+            LOGGER.error(
+                'Updater Configuration File for Artella Launcher not found! {}'.format(self.UPDATER_CONFIG_PATH))
             return
 
         with open(self.UPDATER_CONFIG_PATH, 'r') as f:
             updater_config_data = json.load(f)
         if not updater_config_data:
-            LOGGER.error('Updater Configuration File for Artella Project is empty! {}'.format(self.LAUNCHER_CONFIG_PATH))
+            LOGGER.error(
+                'Updater Configuration File for Artella Project is empty! {}'.format(self.LAUNCHER_CONFIG_PATH))
             return
 
         self._version = updater_config_data.get(defines.ARTELLA_CONFIG_UPDATER_VERSION, defines.DEFAULT_VERSION)
@@ -173,8 +179,10 @@ class ArtellaUpdater(base.BaseWidget, object):
         self._repository_folder = updater_config_data.get(defines.UPDATER_REPOSITORY_FOLDER_ATTRIBUTE_NAME, '')
         self._last_version_file_name = updater_config_data.get(defines.UPDATER_LAST_VERSION_FILE_NAME, '')
         self._version_file_name = updater_config_data.get(defines.UPDATER_VERSION_FILE_NAME, '')
-        self._progress_colors.append(updater_config_data.get(defines.UPDATER_PROGRESS_BAR_COLOR_0_ATTRIBUTE_NAME, defines.DEFAULT_PROGRESS_BAR_COLOR_0))
-        self._progress_colors.append(updater_config_data.get(defines.UPDATER_PROGRESS_BAR_COLOR_1_ATTRIBUTE_NAME, defines.DEFAULT_PROGRESS_BAR_COLOR_1))
+        self._progress_colors.append(updater_config_data.get(defines.UPDATER_PROGRESS_BAR_COLOR_0_ATTRIBUTE_NAME,
+                                                             defines.DEFAULT_PROGRESS_BAR_COLOR_0))
+        self._progress_colors.append(updater_config_data.get(defines.UPDATER_PROGRESS_BAR_COLOR_1_ATTRIBUTE_NAME,
+                                                             defines.DEFAULT_PROGRESS_BAR_COLOR_1))
 
         if not self._tools_env_var:
             self._tools_env_var = '{}_install'.format(self._project.get_clean_name())
@@ -212,9 +220,11 @@ class ArtellaUpdater(base.BaseWidget, object):
         Sets tools installation path
         """
 
-        selected_dir = qtutils.get_folder(title='Select folder where you want to install {} tools'.format(self._project.name.title()))
+        selected_dir = qtutils.get_folder(
+            title='Select folder where you want to install {} tools'.format(self._project.name.title()))
         if not selected_dir or not os.path.exists(selected_dir):
-            qtutils.show_warning(None, 'Installation cancelled', '{} tools intallation cancelled!'.format(self._project.name.title()))
+            qtutils.show_warning(
+                None, 'Installation cancelled', '{} tools intallation cancelled!'.format(self._project.name.title()))
             return
 
         return os.path.abspath(selected_dir)
@@ -239,7 +249,8 @@ class ArtellaUpdater(base.BaseWidget, object):
 
         repository = self._repository_url
         if not repository:
-            self._console.write_error('> Project {} GitHub repository is not valid! {}'.format(self._project.name.title(), repository))
+            self._console.write_error(
+                '> Project {} GitHub repository is not valid! {}'.format(self._project.name.title(), repository))
             QApplication.instance().processEvents()
             return None
 
@@ -318,7 +329,8 @@ class ArtellaUpdater(base.BaseWidget, object):
                 r = r.find_next_sibling(class_='release-entry', recursive=False)
 
         if not version:
-            self._console.write_error('Impossible to retrieve {} lastest release version from GitHub!'.format(self._project.name.title()))
+            self._console.write_error(
+                'Impossible to retrieve {} lastest release version from GitHub!'.format(self._project.name.title()))
             return None
 
         if validate:
@@ -350,7 +362,9 @@ class ArtellaUpdater(base.BaseWidget, object):
 
         install_path = self.get_installation_path()
         if install_path is None or not os.path.exists(install_path):
-            self._console.write_error('> Installation path {} does not exists! Check that tools are installed in your system!\n'.format(install_path))
+            self._console.write_error(
+                '> Installation path {} does not exists! '
+                'Check that tools are installed in your system!\n'.format(install_path))
             return
         else:
             self._console.write('> Installation Path detected: {}\n'.format(install_path))
@@ -362,8 +376,10 @@ class ArtellaUpdater(base.BaseWidget, object):
             QApplication.instance().processEvents()
             return
 
-        self._console.write_ok('Latest {} Tools deployed version found: {}'.format(self.project.name.title(), last_version))
-        self._console.write('Checking current {} Tools installed version on {}'.format(self._project.name.title(), install_path))
+        self._console.write_ok(
+            'Latest {} Tools deployed version found: {}'.format(self.project.name.title(), last_version))
+        self._console.write(
+            'Checking current {} Tools installed version on {}'.format(self._project.name.title(), install_path))
         QApplication.instance().processEvents()
 
         last_version_file = None
@@ -382,7 +398,8 @@ class ArtellaUpdater(base.BaseWidget, object):
         if not last_version_file:
             return True
 
-        self._console.write('{} Tools Last Version File found: {}'.format(self.project.name.title(), last_version_file))
+        self._console.write(
+            '{} Tools Last Version File found: {}'.format(self.project.name.title(), last_version_file))
         QApplication.instance().processEvents()
 
         try:
@@ -401,7 +418,8 @@ class ArtellaUpdater(base.BaseWidget, object):
                         installed_version = __version__
 
             if not installed_version:
-                self._console.write_error('Impossible to get {} Tools installed version ...'.format(self.project.name.title()))
+                self._console.write_error(
+                    'Impossible to get {} Tools installed version ...'.format(self.project.name.title()))
                 QApplication.instance().processEvents()
                 return
 
@@ -409,7 +427,9 @@ class ArtellaUpdater(base.BaseWidget, object):
             QApplication.instance().processEvents()
 
             if installed_version == last_version:
-                self._console.write('\nCurrent installed {} Tools: {} are up-to-date (last deployed version {})!'.format(self.project.name.title(), installed_version, last_version))
+                self._console.write(
+                    '\nCurrent installed {} Tools: {} are up-to-date (last deployed version {})!'.format(
+                        self.project.name.title(), installed_version, last_version))
                 QApplication.instance().processEvents()
                 return False
 
@@ -436,8 +456,10 @@ class ArtellaUpdater(base.BaseWidget, object):
             QApplication.instance().processEvents()
             return None, None, True
 
-        self._console.write_ok('Latest {} Tools deployed version found: {}'.format(self.project.name.title(), last_version))
-        self._console.write('Checking current {} Tools installed version on {}'.format(self._project.name.title(), install_path))
+        self._console.write_ok(
+            'Latest {} Tools deployed version found: {}'.format(self.project.name.title(), last_version))
+        self._console.write(
+            'Checking current {} Tools installed version on {}'.format(self._project.name.title(), install_path))
         QApplication.instance().processEvents()
 
         installed_version = None
@@ -502,7 +524,8 @@ class ArtellaUpdater(base.BaseWidget, object):
                 QCoreApplication.instance().processEvents()
 
                 self._console.write('=' * 15)
-                self._console.write_ok('Current installed {} Tools are outdated {}!'.format(self._project.name.title(), installed_version))
+                self._console.write_ok(
+                    'Current installed {} Tools are outdated {}!'.format(self._project.name.title(), installed_version))
                 self._console.write_ok('Installing new tools ... {}!!'.format(last_version))
                 self._console.write('=' * 15)
                 QCoreApplication.instance().processEvents()
@@ -512,24 +535,30 @@ class ArtellaUpdater(base.BaseWidget, object):
                 repository_name = urlparse(repository).path.rsplit("/", 1)[-1]
                 tools_file = '{}-{}'.format(repository_name, last_version)
                 tools_zip = '{}.{}'.format(tools_file, self._release_extension)
-                tools_url = '{}/releases/download/{}/{}.{}'.format(repository, last_version, tools_file, self._release_extension)
+                tools_url = '{}/releases/download/{}/{}.{}'.format(
+                    repository, last_version, tools_file, self._release_extension)
                 tools_install_path = os.path.join(temp_path, last_version, tools_zip)
                 self._console.write('{} Tools File: {}'.format(self._project.name.title(), tools_zip))
                 self._console.write('{} Tools URL: {}'.format(self._project.name.title(), tools_url))
                 self._console.write('{} Tools Install Path: {}'.format(self._project.name.title(), tools_install_path))
                 QApplication.instance().processEvents()
 
-                if not download.download_file(filename=tools_url, destination=tools_install_path, console=self._console, updater=self):
-                    self._console.write_error('{} is not accessible! Maybe GitHub is down or your internet connection is down!'.format(tools_url))
+                if not download.download_file(
+                        filename=tools_url, destination=tools_install_path, console=self._console, updater=self):
+                    self._console.write_error(
+                        '{} is not accessible! Maybe GitHub is down or your internet connection is down!'.format(
+                            tools_url))
                     return
 
-                self._console.write_ok('Installing {} Tools on: {}'.format(self._project.name.title(), tools_install_path))
+                self._console.write_ok(
+                    'Installing {} Tools on: {}'.format(self._project.name.title(), tools_install_path))
                 QApplication.instance().processEvents()
 
                 self._progress_text.setText('Installing {} Tools ...'.format(self._project.name.title()))
                 QApplication.instance().processEvents()
 
-                download.unzip_file(filename=tools_install_path, destination=temp_path, console=self._console, remove_sub_folders=[])
+                download.unzip_file(
+                    filename=tools_install_path, destination=temp_path, console=self._console, remove_sub_folders=[])
 
                 repo_folder = os.path.join(temp_path, self._repository_folder)
                 extracted_files = os.listdir(repo_folder)
@@ -547,7 +576,8 @@ class ArtellaUpdater(base.BaseWidget, object):
                         shutil.move(fld, install_path)
 
                 self._console.write('=' * 15)
-                self._console.write_ok('{} Tools {} installed successfully!'.format(self._project.name.title(), last_version))
+                self._console.write_ok(
+                    '{} Tools {} installed successfully!'.format(self._project.name.title(), last_version))
                 self._console.write('=' * 15)
                 QCoreApplication.processEvents()
 

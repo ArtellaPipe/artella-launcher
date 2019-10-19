@@ -36,9 +36,9 @@ LOGGER.setLevel(logging.DEBUG)
 
 class ArtellaUpdater(QWidget, object):
     def __init__(
-            self, project_name, deployment_repository, documentation_url=None,
+            self, project_name, deployment_repository, environment='production', documentation_url=None,
             deploy_tag=None, install_env_var=None, requirements_file_name=None,
-            force_venv=False,
+            force_venv=False, splash_path=None,
             parent=None):
         super(ArtellaUpdater, self).__init__(parent=parent)
 
@@ -56,6 +56,7 @@ class ArtellaUpdater(QWidget, object):
         self._install_env_var = install_env_var if install_env_var else self._get_default_install_env_var()
         self._requirements_file_name = requirements_file_name if requirements_file_name else 'requirements.txt'
         self._deploy_tag = deploy_tag if deploy_tag else self._get_latest_deploy_tag()
+        self._splash_path = splash_path if splash_path else self._get_default_splash_path()
 
         self._setup_ui()
 
@@ -148,17 +149,20 @@ class ArtellaUpdater(QWidget, object):
 
         return True if process.returncode == 0 else False
 
-    def _get_splash_pixmap(self):
-        return QPixmap(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'splash.png')
-        )
+    def _get_default_splash_path(self):
+        """
+        Returns default path where splash image is located
+        :return: str
+        """
+
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'images', 'splash.png')
 
     def _set_splash_text(self, new_text):
         self._progress_text.setText(new_text)
         QApplication.instance().processEvents()
 
     def _setup_ui(self):
-        splash_pixmap = self._get_splash_pixmap()
+        splash_pixmap = QPixmap(self._splash_path)
         self._splash = QSplashScreen(splash_pixmap)
         self._splash.setWindowFlags(Qt.FramelessWindowHint)
         self._splash.setEnabled(False)
@@ -319,7 +323,24 @@ class ArtellaUpdater(QWidget, object):
         if not valid_install:
             return
 
+        self._launch()
+
         self._splash.close()
+
+    def _launch(self):
+
+        if not self._venv_info:
+            LOGGER.warning(
+                'Impossible to launch {} Launcher because Virtual Environment Setup is not valid!'.format(
+                    self._project_name))
+            return False
+
+        py_exe = self._venv_info['venv_python']
+
+        cmd = '"{}" -c "import artellapipe; print(artellapipe);"'.format(py_exe)
+        process = subprocess.call(cmd, shell=True)
+
+        print(py_exe)
 
     def _check_installation_path(self, install_path):
         """
@@ -500,7 +521,8 @@ class ArtellaUpdater(QWidget, object):
 
         repository = self._get_deploy_repository_url(release=True)
         if not repository:
-            LOGGER.error('> Project {} GitHub repository is not valid! {}'.format(self._project_name.title(), repository))
+            LOGGER.error(
+                '> Project {} GitHub repository is not valid! {}'.format(self._project_name.title(), repository))
             return None
 
         if repository.startswith('https://github.com/'):
@@ -577,7 +599,8 @@ class ArtellaUpdater(QWidget, object):
                 r = r.find_next_sibling(class_='release-entry', recursive=False)
 
         if not version:
-            LOGGER.error('Impossible to retrieve {} lastest release version from GitHub!'.format(self._project_name.title()))
+            LOGGER.error(
+                'Impossible to retrieve {} lastest release version from GitHub!'.format(self._project_name.title()))
             return None
 
         if validate:
@@ -910,13 +933,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--project_name', required=True)
     parser.add_argument('--repository', required=True)
+    parser.add_argument('--environment', default='production')
+    parser.add_argument('--splash_path', required=False, default=None)
     args = parser.parse_args()
 
     new_app = ArtellaUpdater(
         project_name=args.project_name,
-        deployment_repository=args.repository
+        deployment_repository=args.repository,
+        environment=args.environment,
+        splash_path=args.splash_path
     )
     new_app.init()
     app.quit()
-
-    # sys.exit(app.exec_())
