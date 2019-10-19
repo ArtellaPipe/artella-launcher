@@ -372,14 +372,18 @@ class ArtellaUpdater(QWidget, object):
                 None, 'Select Installation Path for {}'.format(self._project_name))
             if not install_path:
                 LOGGER.info('Installation cancelled by user')
-                QMessageBox.information(self,
-                    'Installation cancelled', 'Installation cancelled by user')
+                QMessageBox.information(
+                    self,
+                    'Installation cancelled',
+                    'Installation cancelled by user')
                 return False
             if not os.path.isdir(install_path):
                 LOGGER.error('Selected Path does not exists!')
-                QMessageBox.information(self,
+                QMessageBox.information(
+                    self,
                     'Selected Path does nto exists',
-                    'Selected Path: "{}" does not exists. Intsallation cancelled!'.foramt(install_path))
+                    'Selected Path: "{}" does not exists. '
+                    'Installation cancelled!'.foramt(install_path))
                 return False
             path_updated = True
 
@@ -419,9 +423,9 @@ class ArtellaUpdater(QWidget, object):
 
         print('{} Logger: "{}"'.format(self._project_name, logger_file))
         LOGGER.info('\n\n\n')
-        LOGGER.info("="*50)
+        LOGGER.info("=" * 50)
         LOGGER.debug('Starting {} App'.format(self._project_name))
-        LOGGER.info("="*50)
+        LOGGER.info("=" * 50)
 
     def _clean_old_config(self):
         """
