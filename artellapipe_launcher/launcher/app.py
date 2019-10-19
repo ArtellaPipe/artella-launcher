@@ -155,7 +155,7 @@ class ArtellaUpdater(QWidget, object):
         :return: str
         """
 
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'images', 'splash.png')
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'images', 'app_splash.png')
 
     def _set_splash_text(self, new_text):
         self._progress_text.setText(new_text)
