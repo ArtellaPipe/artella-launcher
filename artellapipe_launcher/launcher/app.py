@@ -240,7 +240,8 @@ class ArtellaUpdater(QWidget, object):
             os.makedirs(logger_path)
 
         if not os.path.isdir(logger_path):
-            QMessageBox.critical(self,
+            QMessageBox.critical(
+                self,
                 'Impossible to retrieve app data folder',
                 'Impossible to retrieve app data folder.\n\n'
                 'Please contact TD.'
@@ -258,7 +259,8 @@ class ArtellaUpdater(QWidget, object):
 
         if not self.is_python_installed():
             LOGGER.warning('No Python Installation found!')
-            QMessageBox.warning(self,
+            QMessageBox.warning(
+                self,
                 'No Python Installation found in {}'.format(self.get_current_os()),
                 'No valid Python installation found in your computer.\n\n'
                 'Please follow instructions in {0} Documentation to install Python in your computer\n\n'
@@ -271,7 +273,8 @@ class ArtellaUpdater(QWidget, object):
 
         if not self.is_pip_installed():
             LOGGER.warning('No pip Installation found!')
-            QMessageBox.warning(self,
+            QMessageBox.warning(
+                self,
                 'No pip Installation found in {}'.format(self.get_current_os()),
                 'No valid pip installation found in your computer.\n\n'
                 'Please follow instructions in {0} Documentation to install Python in your computer\n\n'
@@ -289,7 +292,8 @@ class ArtellaUpdater(QWidget, object):
             process.wait()
             if not self.is_virtualenv_installed():
                 LOGGER.error('Impossible to install virtualenv using pip.')
-                QMessageBox.warning(self,
+                QMessageBox.warning(
+                    self,
                     'Impossible to install virtualenv in {}'.format(self.get_current_os()),
                     'Was not possible to install virtualenv in your computer.\n\n'
                     'Please contact your project TD.'
@@ -459,7 +463,8 @@ class ArtellaUpdater(QWidget, object):
             with open(config_file, 'w') as cfg:
                 json.dump({}, cfg)
             if not os.path.isfile(config_file):
-                QMessageBox.critical(self,
+                QMessageBox.critical(
+                    self,
                     'Impossible to create configuration file',
                     'Impossible to create configuration file.\n\n'
                     'Please contact TD.'

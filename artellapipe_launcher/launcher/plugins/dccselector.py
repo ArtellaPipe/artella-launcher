@@ -302,7 +302,7 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
     def init_config(self):
         mod_name = os.path.splitext(os.path.basename(os.path.abspath(__file__)))[0]
         mod_folder = os.path.dirname(os.path.abspath(__file__))
-        plugin_config = os.path.join(mod_folder, mod_name+'.json')
+        plugin_config = os.path.join(mod_folder, mod_name + '.json')
         if os.path.isfile(plugin_config):
             self.load_dccs(plugin_config)
 

@@ -107,7 +107,8 @@ class PluginManager(object):
         plugin_paths = python.force_list(plugin_paths)
         for p in plugin_paths:
             if not os.path.exists(p):
-                LOGGER.warning('Impossible to register Artella Launcher Plugin Path because it does not exists: {}!'.format(p))
+                LOGGER.warning(
+                    'Impossible to register Artella Launcher Plugin Path because it does not exists: {}!'.format(p))
                 continue
             self._register_plugin_path(p)
 
