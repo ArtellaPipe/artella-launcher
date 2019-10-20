@@ -30,6 +30,8 @@ def init(do_reload=False):
     :param do_reload: bool, Whether to reload modules or not
     """
 
+    logging.config.fileConfig(get_logging_config(), disable_existing_loggers=False)
+
     import sentry_sdk
     try:
         sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788")
@@ -173,6 +175,3 @@ def get_updater_config_path():
     cfg_path = get_artella_launcher_configurations_folder()
 
     return path_utils.clean_path(os.path.join(cfg_path, defines.ARTELLA_UPDATER_CONFIG_FILE_NAME))
-
-
-logging.config.fileConfig(get_logging_config(), disable_existing_loggers=False)
