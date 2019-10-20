@@ -390,7 +390,7 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
             try:
                 dcc_module = importlib.import_module(
-                    'artellapipe_launcher.launcher.dccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
+                    'artellapipe.launcher.dccs.{}dcc'.format(dcc_name.lower().replace(' ', '')))
             except ImportError:
                 LOGGER.warning('DCC Python module {}dcc not found!'.format(dcc_name.lower().replace(' ', '')))
                 continue
