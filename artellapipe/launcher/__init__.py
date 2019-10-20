@@ -23,10 +23,6 @@ current_project = None
 
 # =================================================================================
 
-from tpPyUtils import path as path_utils
-
-from artellapipe.launcher.core import defines
-
 
 def init(do_reload=False):
     """
@@ -131,6 +127,8 @@ def get_dccs_path():
     :return: str
     """
 
+    from tpPyUtils import path as path_utils
+
     return path_utils.clean_path(os.path.join(os.path.dirname(__file__), 'dccs'))
 
 
@@ -139,6 +137,8 @@ def get_artella_launcher_configurations_folder():
     Returns path where artella configurations folder are located
     :return: str
     """
+
+    from artellapipe.launcher.core import defines
 
     if os.environ.get(defines.ARTELLA_LAUNCHER_CONFIGURATION_DEV, None):
         return os.environ[defines.ARTELLA_LAUNCHER_CONFIGURATION_DEV]
@@ -153,6 +153,9 @@ def get_launcher_config_path():
     :return: str
     """
 
+    from tpPyUtils import path as path_utils
+    from artellapipe.launcher.core import defines
+
     cfg_path = get_artella_launcher_configurations_folder()
 
     return path_utils.clean_path(os.path.join(cfg_path, defines.ARTELLA_LAUNCHER_CONFIG_FILE_NAME))
@@ -163,6 +166,9 @@ def get_updater_config_path():
     Returns path where default Artella updater config is located
     :return: str
     """
+
+    from tpPyUtils import path as path_utils
+    from artellapipe.launcher.core import defines
 
     cfg_path = get_artella_launcher_configurations_folder()
 
