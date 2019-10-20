@@ -39,17 +39,28 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
+class ArtellaUpdaterException(Exception, object):
+    def __init__(self, exc):
+        if type(exc) in [str, unicode]:
+            exc = Exception(exc)
+        msg = '{} | {}'.format(exc, traceback.format_exc())
+        LOGGER.exception(msg)
+        traceback.print_exc()
+        QMessageBox.critical(None, 'Error', msg)
+
+
 class ArtellaUpdater(QWidget, object):
     def __init__(
-            self, project_name, deployment_repository, environment='production', documentation_url=None,
+            self, project_name, app_version, deployment_repository, environment='production', documentation_url=None,
             deploy_tag=None, install_env_var=None, requirements_file_name=None,
-            force_venv=False, splash_path=None,
+            force_venv=False, splash_path=None, script_path=None,
             parent=None):
         super(ArtellaUpdater, self).__init__(parent=parent)
 
         self._config_data = self._read_config()
 
         self._project_name = project_name if project_name else self._get_config('name')
+        self._app_version = app_version if app_version else '0.0.0'
         self._repository = deployment_repository if deployment_repository else self._get_config('repository')
         self._splash_path = splash_path if splash_path and os.path.isfile(splash_path) else self._get_config('splash')
         self._force_venv = force_venv
@@ -58,14 +69,16 @@ class ArtellaUpdater(QWidget, object):
         self._setup_logger()
         self._setup_config()
 
+        self._setup_ui()
+        QApplication.instance().processEvents()
+
         self._install_path = None
         self._requirements_path = None
         self._documentation_url = documentation_url if documentation_url else self._get_default_documentation_url()
         self._install_env_var = install_env_var if install_env_var else self._get_default_install_env_var()
         self._requirements_file_name = requirements_file_name if requirements_file_name else 'requirements.txt'
         self._deploy_tag = deploy_tag if deploy_tag else self._get_latest_deploy_tag()
-
-        self._setup_ui()
+        self._script_path = script_path if script_path and os.path.isfile(script_path) else self._get_script_path()
 
         self.init()
 
@@ -131,7 +144,7 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = subprocess.Popen(['python', '-c', 'quit()'], stdout=subprocess.PIPE, shell=True)
+        process = subprocess.Popen(['python', '-c', 'quit()'])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -142,7 +155,7 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = subprocess.Popen(['pip', '-V'], stdout=subprocess.PIPE, shell=True)
+        process = subprocess.Popen(['pip', '-V'])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -153,7 +166,7 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = subprocess.Popen(['virtualenv', '--version'], stdout=subprocess.PIPE, shell=True)
+        process = subprocess.Popen(['virtualenv', '--version'])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -180,8 +193,8 @@ class ArtellaUpdater(QWidget, object):
         try:
             with open(config_path) as config_file:
                 data = json.load(config_file)
-        except RuntimeError:
-            pass
+        except RuntimeError as exc:
+            raise Exception(exc)
 
         return data
 
@@ -196,6 +209,21 @@ class ArtellaUpdater(QWidget, object):
             return None
 
         return self._config_data.get(config_name, None)
+
+    def _get_script_path(self):
+        script_path = None
+        config_file_name = 'launcher.py'
+        script_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'scripts', config_file_name)
+        if not os.path.isfile(script_path):
+            script_path = os.path.join(os.path.dirname(sys.executable), 'resources', config_file_name)
+            if not os.path.isfile(script_path):
+                if hasattr(sys, '_MEIPASS'):
+                    script_path = os.path.join(sys._MEIPASS, 'resources', config_file_name)
+
+        LOGGER.info('Launcher Script: "{}"'.format(script_path))
+
+        return script_path
 
     def _set_splash_text(self, new_text):
         self._progress_text.setText(new_text)
@@ -212,7 +240,9 @@ class ArtellaUpdater(QWidget, object):
         splash_layout.setAlignment(Qt.AlignBottom)
         self._splash.setLayout(splash_layout)
 
+        self._version_lbl = QLabel()
         self._install_path_lbl = QLabel()
+        self._deploy_tag_lbl = QLabel()
         self._progress_text = QLabel('Setting {} ...'.format(self._project_name.title()))
         self._progress_text.setAlignment(Qt.AlignCenter)
         self._progress_text.setStyleSheet("QLabel { background-color : rgba(0, 0, 0, 180); color : white; }")
@@ -221,7 +251,13 @@ class ArtellaUpdater(QWidget, object):
         self._progress_text.setFont(font)
 
         install_path_layout = QHBoxLayout()
+        install_path_layout.setContentsMargins(5, 5, 5, 5)
+        install_path_layout.setSpacing(2)
+        install_path_layout.addWidget(self._version_lbl)
+        install_path_layout.addItem(QSpacerItem(15, 0, QSizePolicy.Preferred, QSizePolicy.Preferred))
         install_path_layout.addWidget(self._install_path_lbl)
+        install_path_layout.addItem(QSpacerItem(15, 0, QSizePolicy.Preferred, QSizePolicy.Preferred))
+        install_path_layout.addWidget(self._deploy_tag_lbl)
         install_path_layout.addItem(QSpacerItem(10, 0, QSizePolicy.Expanding, QSizePolicy.Preferred))
         splash_layout.addLayout(install_path_layout)
         splash_layout.addWidget(self._progress_text)
@@ -328,7 +364,7 @@ class ArtellaUpdater(QWidget, object):
         if not self.is_virtualenv_installed():
             LOGGER.warning('No virtualenv Installation found!')
             LOGGER.info('Installing virtualenv ...')
-            process = subprocess.Popen(['pip', 'install', 'virtualenv'], stdout=subprocess.PIPE, shell=True)
+            process = subprocess.Popen(['pip', 'install', 'virtualenv'])
             process.wait()
             if not self.is_virtualenv_installed():
                 LOGGER.error('Impossible to install virtualenv using pip.')
@@ -355,7 +391,9 @@ class ArtellaUpdater(QWidget, object):
         install_path = self._set_installation_path()
         if not install_path:
             return
+        self._version_lbl.setText(str('{}'.format(self._app_version)))
         self._install_path_lbl.setText('Install Path: {}'.format(install_path))
+        self._deploy_tag_lbl.setText('Deployment Tag: {}'.format(self._deploy_tag))
 
         valid_venv = self._setup_environment()
         if not valid_venv:
@@ -367,11 +405,9 @@ class ArtellaUpdater(QWidget, object):
         if not valid_install:
             return
 
-        self._launch()
-
         self._splash.close()
 
-    def _launch(self):
+    def launch(self):
 
         if not self._venv_info:
             LOGGER.warning(
@@ -379,46 +415,15 @@ class ArtellaUpdater(QWidget, object):
                     self._project_name))
             return False
 
-        script_to_launch = self._create_launcher_script()
         py_exe = self._venv_info['venv_python']
+        if not self._script_path or not os.path.isfile(self._script_path):
+            raise Exception('Impossible to find launcher script!')
 
-        cmd = '"{}" "{}"'.format(py_exe, script_to_launch)
-        process = subprocess.call(cmd, shell=True)
+        cmd = '"{}" "{}"'.format(py_exe, self._script_path)
+        LOGGER.info('Executing {} Launcher ...'.format(self._project_name))
 
-    def _create_launcher_script(self):
-        """
-        Internal function that creates the output file used to generate launcher app
-        :return: str
-        """
-
-        launcher_script = """#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
-
-__author__ = "Tomas Poveda"
-__license__ = "MIT"
-__maintainer__ = "Tomas Poveda"
-__email__ = "tpovedatd@gmail.com"
-
-import sys
-
-from Qt.QtWidgets import QApplication
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    from {0} import launcher
-    launcher.init()
-    from {0}.launcher import launcher
-    launcher.run()
-""".format(self.get_clean_name())
-
-        script_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '{}_launcher.py'.format(self.get_clean_name()))
-        with open(script_path, 'w') as script_file:
-            script_file.write(launcher_script)
-
-        return script_path
+        QApplication.instance().quit()
+        process = subprocess.call(cmd, shell=False)
 
     def _check_installation_path(self, install_path):
         """
@@ -440,6 +445,23 @@ if __name__ == '__main__':
 
         path_updated = False
         install_path = self._get_installation_path()
+
+        # Remove older installations
+        self._set_splash_text('Searching old installation ...')
+        old_installation = False
+        if os.path.isdir(install_path):
+            for d in os.listdir(install_path):
+                if d == self.get_clean_name():
+                    old_dir = os.path.join(install_path, d)
+                    content = os.listdir(old_dir)
+                    if 'Include' not in content or 'Lib' not in content or 'Scripts' not in content:
+                        old_installation = True
+                        break
+        if old_installation:
+            LOGGER.info("Old installation found. Removing ...")
+            self._set_splash_text('Removing old installation ...')
+            shutil.rmtree(install_path)
+
         if not install_path or not os.path.isdir(install_path):
             self._set_splash_text('Select {} installation folder ...'.format(self._project_name))
             install_path = QFileDialog.getExistingDirectory(
@@ -469,7 +491,7 @@ if __name__ == '__main__':
             return
 
         if path_updated:
-            self._set_splash_text('Registering new intall path ...')
+            self._set_splash_text('Registering new install path ...')
             valid_update_config = self._set_config(self.install_env_var, install_path)
             if not valid_update_config:
                 return
@@ -764,7 +786,7 @@ if __name__ == '__main__':
             shutil.rmtree(venv_path)
 
         self._set_splash_text('Creating Virtual Environment: "{}"'.format(venv_path))
-        process = subprocess.Popen(['virtualenv', venv_path], stdout=subprocess.PIPE, shell=True)
+        process = subprocess.Popen(['virtualenv', venv_path])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -792,6 +814,20 @@ if __name__ == '__main__':
 
         return os.path.isdir(venv_path)
 
+    def _try_download_unizip_deployment_requirements(self, deployment_url, download_path, dirname):
+        valid_download = self._download_file(deployment_url, download_path)
+        if not valid_download:
+            return False
+
+        try:
+            valid_unzip = self._unzip_file(filename=download_path, destination=dirname, remove_sub_folders=[])
+        except Exception:
+            valid_unzip = False
+        if not valid_unzip:
+            return False
+
+        return True
+
     def _download_deployment_requirements(self, dirname):
         """
         Internal function that downloads the current deployment requirements
@@ -811,15 +847,18 @@ if __name__ == '__main__':
         repo_name = urlparse(deployment_url).path.rsplit("/", 1)[-1]
         download_path = os.path.join(dirname, repo_name)
 
-        valid_download = self._download_file(deployment_url, download_path)
-        if not valid_download:
-            LOGGER.error('Something went wrong during the download of: {}'.format(deployment_url))
-            return False
-
-        self._set_splash_text('Unzipping Deployment Data ...')
-        valid_unzip = self._unzip_file(filename=download_path, destination=dirname, remove_sub_folders=[])
-        if not valid_unzip:
-            LOGGER.error('Something went wrong during the unzip of: {}'.format(download_path))
+        valid_status = False
+        total_tries = 0
+        self._set_splash_text('Downloading and Unzipping Deployment Data ...')
+        while not valid_status:
+            if total_tries > 10:
+                break
+            valid_status = self._try_download_unizip_deployment_requirements(deployment_url, download_path, dirname)
+            total_tries += 1
+            if not valid_status:
+                LOGGER.warning('Retrying downloading and unzip deployment data: {}'.format(total_tries))
+        if not valid_status:
+            LOGGER.error('Something went wrong during the download and unzipping of: {}'.format(deployment_url))
             return False
 
         self._set_splash_text('Searching Requirements File: {}'.format(self._requirements_file_name))
@@ -867,9 +906,7 @@ if __name__ == '__main__':
             process = subprocess.Popen(pip_cmd)
             process.wait()
         except Exception as exc:
-            LOGGER.error('Error while installing requirements from: {} | {} | {}'.format(
-                self._requirements_path, exc, traceback.format_exc()))
-            return False
+            raise Exception(exc)
 
         return True
 
@@ -961,8 +998,8 @@ if __name__ == '__main__':
             req = Request(filename, headers=hdr)
             data = urlopen(req)
             _chunk_read(response=data, destination=destination, report_hook=_chunk_report)
-        except Exception as e:
-            raise RuntimeError('{} | {}'.format(e, traceback.format_exc()))
+        except Exception as exc:
+            raise Exception(exc)
 
         if os.path.exists(destination):
             LOGGER.info('Files downloaded succesfully!')
@@ -1004,9 +1041,8 @@ if __name__ == '__main__':
             zip_ref.extractall(destination)
             zip_ref.close()
             return True
-        except Exception as e:
-            LOGGER.error('{} | {}'.format(e, traceback.format_exc()))
-            return False
+        except Exception as exc:
+            raise Exception(exc)
 
 
 if __name__ == '__main__':
@@ -1015,22 +1051,30 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--project-name', required=False)
+    parser.add_argument('--version', required=False)
     parser.add_argument('--repository', required=False)
     parser.add_argument('--environment', default='production')
+    parser.add_argument('--icon-path', required=False, default=None)
     parser.add_argument('--splash-path', required=False, default=None)
+    parser.add_argument('--script-path', required=False, default=None)
     args = parser.parse_args()
 
+    if args.icon_path:
+        app.setWindowIcon(QIcon(args.icon_path))
+
+    new_app = None
+    valid_app = False
     try:
         new_app = ArtellaUpdater(
             project_name=args.project_name,
+            app_version=args.version,
             deployment_repository=args.repository,
             environment=args.environment,
-            splash_path=args.splash_path
+            splash_path=args.splash_path,
+            script_path=args.script_path
         )
+        valid_app = True
+        new_app.launch()
     except Exception as exc:
-        msg = '{} | {}'.format(exc, traceback.format_exc())
-        LOGGER.exception(msg)
-        traceback.print_exc()
-        QMessageBox.critical(None, 'Error', msg)
-    finally:
-        app.quit()
+        raise ArtellaUpdaterException(exc)
+

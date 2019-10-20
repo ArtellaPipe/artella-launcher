@@ -59,8 +59,11 @@ class LauncherGenerator(object):
 
         self._cleanup()
 
+    def _get_clean_name(self):
+        return self._project_name.replace(' ', '').lower()
+
     def _get_venv_name(self):
-        return '{}_dev'.format(self._project_name.replace(' ', '').lower())
+        return '{}_dev'.format(self._get_clean_name())
 
     def _setup_environment(self):
         """
@@ -142,8 +145,11 @@ class LauncherGenerator(object):
     def _get_config_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
 
+    def _get_launcher_script_path(self):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'launcher.py')
+
     def _get_default_app_path(self):
-        return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py')
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app.py')
 
     def _get_default_icon_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artella_icon.ico')
@@ -191,6 +197,41 @@ class LauncherGenerator(object):
         config_path = self._get_config_path()
         with open(config_path, 'w') as config_file:
             json.dump(config_data, config_file)
+
+    def _generate_launcher_script(self):
+        """
+        Internal function that creates the output file used to generate launcher app
+        :return: str
+        """
+
+        launcher_script = """#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function, division, absolute_import
+
+__author__ = "Tomas Poveda"
+__license__ = "MIT"
+__maintainer__ = "Tomas Poveda"
+__email__ = "tpovedatd@gmail.com"
+
+import sys
+
+from Qt.QtWidgets import QApplication
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    from {0} import launcher
+    launcher.init()
+    from {0}.launcher import launcher
+    launcher.run()
+    app.exec_()
+""".format(self._get_clean_name())
+
+        script_path = self._get_launcher_script_path()
+        with open(script_path, 'w') as script_file:
+            script_file.write(launcher_script)
+
+        return script_path
 
     def _generate_spec_file(self, venv_info):
         python_exe = venv_info['venv_python']
@@ -251,7 +292,8 @@ class LauncherGenerator(object):
         add_data_cmd = '--add-data'
         data_files = [
             self._get_default_splash_path(),
-            self._get_config_path()
+            self._get_config_path(),
+            self._get_launcher_script_path()
         ]
 
         for data in data_files:
@@ -263,6 +305,7 @@ class LauncherGenerator(object):
         python_exe = venv_info['venv_python']
 
         self._generate_config_file()
+        self._generate_launcher_script()
         specs_file_name = self._generate_spec_file(venv_info)
 
         pyinstaller_exe = os.path.join(os.path.dirname(python_exe), 'pyinstaller.exe')
@@ -308,7 +351,7 @@ if __name__ == '__main__':
         help='Path where splash image is located')
     parser.add_argument(
         '--update-requirements',
-        required=False, default=False, action='store_true',
+        required=False, default=True, action='store_true',
         help='Whether update venv requirements')
     parser.add_argument(
         '--windowed',
