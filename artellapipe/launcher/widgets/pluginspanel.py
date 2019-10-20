@@ -27,10 +27,9 @@ class PluginButton(base.BaseWidget, object):
 
     clicked = Signal(object)
 
-    def __init__(self, project, plugin, resource, parent=None):
+    def __init__(self, project, plugin, parent=None):
         self._project = project
         self._plugin = plugin
-        self._resource = resource
         super(PluginButton, self).__init__(parent=parent)
 
     @property
@@ -68,7 +67,7 @@ class PluginButton(base.BaseWidget, object):
             theme = icon_split[0]
         else:
             theme = 'color'
-        icon_path = self._project.resource.get('icons', theme, '{}.png'.format(self._plugin.ICON))
+        icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(self._plugin.ICON), key='project')
         if not os.path.isfile(icon_path):
             icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(self._plugin.ICON))
             if not os.path.isfile(icon_path):
@@ -76,7 +75,7 @@ class PluginButton(base.BaseWidget, object):
             else:
                 plugin_icon = resource.ResourceManager().icon(self._plugin.ICON, theme=theme)
         else:
-            plugin_icon = self._project.resource.icon(self._plugin.ICON, theme=theme)
+            plugin_icon = resource.ResourceManager().icon(self._plugin.ICON, theme=theme, key='project')
 
         self._plugin_btn.setIcon(plugin_icon)
         self._plugin_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -116,6 +115,6 @@ class PluginsPanel(base.BaseWidget, object):
         if not plugin:
             return
 
-        plugin_btn = PluginButton(project=self._project, plugin=plugin, resource=self._project.resource)
+        plugin_btn = PluginButton(project=self._project, plugin=plugin)
         plugin_btn.clicked.connect(self.openPlugin.emit)
         self._flow_layout.addWidget(plugin_btn)

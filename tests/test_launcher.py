@@ -7,7 +7,7 @@ Module that contains tests for artellapipe-launcher
 
 import pytest
 
-from artellapipe_launcher.launcher import __version__
+from artellapipe.launcher import __version__
 
 
 def test_version():
