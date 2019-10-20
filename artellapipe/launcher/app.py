@@ -67,6 +67,8 @@ class ArtellaUpdater(QWidget, object):
 
         self._setup_ui()
 
+        self.init()
+
     @property
     def project_name(self):
         return self._project_name
@@ -169,7 +171,8 @@ class ArtellaUpdater(QWidget, object):
         if not os.path.isfile(config_path):
             config_path = os.path.join(os.path.dirname(sys.executable), 'resources', config_file_name)
             if not os.path.isfile(config_path):
-                config_path = os.path.join(sys._MEIPASS, 'resources', config_file_name)
+                if hasattr(sys, '_MEIPASS'):
+                    config_path = os.path.join(sys._MEIPASS, 'resources', config_file_name)
 
         if not os.path.isfile(config_path):
             return data
@@ -376,12 +379,47 @@ class ArtellaUpdater(QWidget, object):
                     self._project_name))
             return False
 
+        script_to_launch = self._create_launcher_script()
+
         py_exe = self._venv_info['venv_python']
 
-        cmd = '"{}" -c "import artellapipe; print(artellapipe);"'.format(py_exe)
-        process = subprocess.call(cmd, shell=True)
+        # cmd = '"{}" -c "import artellapipe; print(artellapipe);"'.format(py_exe)
+        # process = subprocess.call(cmd, shell=True)
 
-        print(py_exe)
+    def _create_launcher_script(self):
+        """
+        Internal function that creates the output file used to generate launcher app
+        :return: str
+        """
+
+        launcher_script = """#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function, division, absolute_import
+
+__author__ = "Tomas Poveda"
+__license__ = "MIT"
+__maintainer__ = "Tomas Poveda"
+__email__ = "tpovedatd@gmail.com"
+
+import sys
+
+from Qt.QtWidgets import QApplication
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    from {0} import launcher
+    launcher.init()
+    from {0}.launcher import launcher
+    launcher.run()
+""".format(self.get_clean_name())
+
+        script_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), '{}_launcher.py'.format(self.get_clean_name()))
+        with open(script_path, 'w') as script_file:
+            script_file.write(launcher_script)
+
+        return script_path
 
     def _check_installation_path(self, install_path):
         """
@@ -990,7 +1028,6 @@ if __name__ == '__main__':
             environment=args.environment,
             splash_path=args.splash_path
         )
-        new_app.init()
     except Exception as exc:
         msg = '{} | {}'.format(exc, traceback.format_exc())
         LOGGER.exception(msg)

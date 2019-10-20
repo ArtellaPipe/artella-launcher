@@ -23,9 +23,9 @@ from tpQtLib.widgets import tabs
 from artellapipe.gui import window
 from artellapipe.core import artellalib
 from artellapipe.utils import exceptions, resource
-from artellapipe_launcher import launcher
-from artellapipe_launcher.launcher.core import defines, plugin as core_plugin
-from artellapipe_launcher.launcher.widgets import pluginspanel
+from artellapipe import launcher
+from artellapipe.launcher.core import defines, plugin as core_plugin
+from artellapipe.launcher.widgets import pluginspanel
 
 LOGGER = logging.getLogger()
 

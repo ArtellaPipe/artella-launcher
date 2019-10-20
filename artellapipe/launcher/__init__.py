@@ -25,7 +25,7 @@ current_project = None
 
 from tpPyUtils import path as path_utils
 
-from artellapipe_launcher.launcher.core import defines
+from artellapipe.launcher.core import defines
 
 
 def init(do_reload=False):

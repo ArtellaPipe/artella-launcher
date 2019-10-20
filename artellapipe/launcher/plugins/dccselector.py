@@ -32,7 +32,7 @@ from tpPyUtils import folder as folder_utils, path as path_utils
 from tpQtLib.core import base, qtutils
 from tpQtLib.widgets import grid, splitters
 
-from artellapipe_launcher.launcher.core import defines, plugin, updater, config
+from artellapipe.launcher.core import defines, plugin, updater, config
 from artellapipe.core import artellalib
 from artellapipe.utils import exceptions, resource
 

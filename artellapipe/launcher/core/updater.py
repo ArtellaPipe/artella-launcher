@@ -33,10 +33,10 @@ from Qt.QtWidgets import *
 from tpQtLib.core import base
 from tpQtLib.core import qtutils
 
-from artellapipe_launcher import launcher
-from artellapipe_launcher.launcher.core import defines, config
-from artellapipe_launcher.launcher.widgets import console
-from artellapipe_launcher.launcher.utils import download
+from artellapipe import launcher
+from artellapipe.launcher.core import defines, config
+from artellapipe.launcher.widgets import console
+from artellapipe.launcher.utils import download
 
 LOGGER = logging.getLogger()
 
