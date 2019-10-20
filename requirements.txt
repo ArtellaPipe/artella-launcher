@@ -17,5 +17,3 @@ python-json-logger
 sentry-sdk
 tpPyUtils
 tpQtLib
-appdirs
-backports.tempfile

@@ -380,11 +380,10 @@ class ArtellaUpdater(QWidget, object):
             return False
 
         script_to_launch = self._create_launcher_script()
-
         py_exe = self._venv_info['venv_python']
 
-        # cmd = '"{}" -c "import artellapipe; print(artellapipe);"'.format(py_exe)
-        # process = subprocess.call(cmd, shell=True)
+        cmd = '"{}" "{}"'.format(py_exe, script_to_launch)
+        process = subprocess.call(cmd, shell=True)
 
     def _create_launcher_script(self):
         """
