@@ -1077,4 +1077,3 @@ if __name__ == '__main__':
         new_app.launch()
     except Exception as exc:
         raise ArtellaUpdaterException(exc)
-
