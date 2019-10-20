@@ -1,0 +1,7 @@
+artellapipe.launcher.core.plugin module
+=======================================
+
+.. automodule:: artellapipe.launcher.core.plugin
+   :members:
+   :undoc-members:
+   :show-inheritance:

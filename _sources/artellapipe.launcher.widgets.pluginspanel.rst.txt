@@ -1,0 +1,7 @@
+artellapipe.launcher.widgets.pluginspanel module
+================================================
+
+.. automodule:: artellapipe.launcher.widgets.pluginspanel
+   :members:
+   :undoc-members:
+   :show-inheritance:

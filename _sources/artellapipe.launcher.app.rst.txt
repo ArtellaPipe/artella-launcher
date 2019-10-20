@@ -1,0 +1,7 @@
+artellapipe.launcher.app module
+===============================
+
+.. automodule:: artellapipe.launcher.app
+   :members:
+   :undoc-members:
+   :show-inheritance:

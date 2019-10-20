@@ -1,0 +1,363 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>artellapipe.launcher.core.plugin module &mdash; artellapipe-core 0.0.l documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="artellapipe.launcher.core.updater module" href="artellapipe.launcher.core.updater.html" />
+    <link rel="prev" title="artellapipe.launcher.core.launcher module" href="artellapipe.launcher.core.launcher.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> artellapipe-core
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">artellapipe</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="artellapipe.html">artellapipe package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="artellapipe.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="artellapipe.launcher.html">artellapipe.launcher package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="artellapipe.html#module-artellapipe">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">artellapipe-core</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">artellapipe</a> &raquo;</li>
+        
+          <li><a href="artellapipe.html">artellapipe package</a> &raquo;</li>
+        
+          <li><a href="artellapipe.launcher.html">artellapipe.launcher package</a> &raquo;</li>
+        
+          <li><a href="artellapipe.launcher.core.html">artellapipe.launcher.core package</a> &raquo;</li>
+        
+      <li>artellapipe.launcher.core.plugin module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/artellapipe.launcher.core.plugin.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-artellapipe.launcher.core.plugin">
+<span id="artellapipe-launcher-core-plugin-module"></span><h1>artellapipe.launcher.core.plugin module<a class="headerlink" href="#module-artellapipe.launcher.core.plugin" title="Permalink to this headline">¶</a></h1>
+<p>Module that contains core implementation for Artella Launcher Plugins</p>
+<dl class="class">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin">
+<em class="property">class </em><code class="sig-prename descclassname">artellapipe.launcher.core.plugin.</code><code class="sig-name descname">ArtellaLauncherPlugin</code><span class="sig-paren">(</span><em class="sig-param">project</em>, <em class="sig-param">parent=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tpQtLib.core.base.BaseWidget</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.HIDDEN">
+<code class="sig-name descname">HIDDEN</code><em class="property"> = False</em><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.HIDDEN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.ICON">
+<code class="sig-name descname">ICON</code><em class="property"> = 'plugin'</em><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.ICON" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.ID">
+<code class="sig-name descname">ID</code><em class="property"> = 'ArtellaLauncherPlugin'</em><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.ID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.LABEL">
+<code class="sig-name descname">LABEL</code><em class="property"> = 'Plugin'</em><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.LABEL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.ORDER">
+<code class="sig-name descname">ORDER</code><em class="property"> = 0</em><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.ORDER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.config">
+<em class="property">property </em><code class="sig-name descname">config</code><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the config associated to this launcher
+:return: ArtellaConfig</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.init_config">
+<code class="sig-name descname">init_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.init_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that reads Plugin configuration
+This function can be extended in new launchers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.initialize">
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes plugin
+:return:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.launched">
+<code class="sig-name descname">launched</code><em class="property"> = &lt;PySide2.QtCore.Signal object&gt;</em><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.launched" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.project">
+<em class="property">property </em><code class="sig-name descname">project</code><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.project" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns project this plugin belongs to
+:return: ArtellaProject</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.staticMetaObject">
+<code class="sig-name descname">staticMetaObject</code><em class="property"> = &lt;PySide2.QtCore.QMetaObject object&gt;</em><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.staticMetaObject" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.uninitialize">
+<code class="sig-name descname">uninitialize</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin.uninitialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uninitialize plugin</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="artellapipe.launcher.core.plugin.PluginManager">
+<em class="property">class </em><code class="sig-prename descclassname">artellapipe.launcher.core.plugin.</code><code class="sig-name descname">PluginManager</code><span class="sig-paren">(</span><em class="sig-param">plugin_paths</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="artellapipe.launcher.core.plugin.PluginManager.PLUGIN_CLASS">
+<code class="sig-name descname">PLUGIN_CLASS</code><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager.PLUGIN_CLASS" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#artellapipe.launcher.core.plugin.ArtellaLauncherPlugin" title="artellapipe.launcher.core.plugin.ArtellaLauncherPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArtellaLauncherPlugin</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.PluginManager.check_plugin_validity">
+<code class="sig-name descname">check_plugin_validity</code><span class="sig-paren">(</span><em class="sig-param">plugin_to_check</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager.check_plugin_validity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether given plugin is a valid ArtellaLauncherPlugin or not
+:param plugin_to_check: ArtellaLauncherPlugin
+:return: bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.PluginManager.get_plugin_from_module">
+<code class="sig-name descname">get_plugin_from_module</code><span class="sig-paren">(</span><em class="sig-param">module</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager.get_plugin_from_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns Artella Launcher plugins from a given module
+:param module: Module, Python module
+:return: list(ArtellaLauncherPlugin), list of Artella Launcher plugins stored in given module</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.PluginManager.get_plugins">
+<code class="sig-name descname">get_plugins</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager.get_plugins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find and returns available Artella Launcher plugins on given paths
+:return: dict(str, ArtellaLauncherPlugin)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.PluginManager.registered_plugin_paths">
+<em class="property">property </em><code class="sig-name descname">registered_plugin_paths</code><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager.registered_plugin_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list with all registered plugin paths
+:return: list(str)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.PluginManager.registered_plugins">
+<em class="property">property </em><code class="sig-name descname">registered_plugins</code><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager.registered_plugins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list with all registered Artella Launcher plugins
+:return: list(ArtellaLauncherPlugin)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.core.plugin.PluginManager.sort_plugins">
+<em class="property">static </em><code class="sig-name descname">sort_plugins</code><span class="sig-paren">(</span><em class="sig-param">plugins_list</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.core.plugin.PluginManager.sort_plugins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sorts loaded Artella Launcher plugins taking into account their order attribute
+:param plugins_list: list(ArtellaLauncherPlugin)
+:return: list(ArtellaLauncherPlugin)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+    <a href="https://github.com/ArtellaPipe/artellapipe-core" target="_blank">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub">
+    </a>
+
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="artellapipe.launcher.core.updater.html" class="btn btn-neutral float-right" title="artellapipe.launcher.core.updater module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="artellapipe.launcher.core.launcher.html" class="btn btn-neutral float-left" title="artellapipe.launcher.core.launcher module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Tomas Poveda
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

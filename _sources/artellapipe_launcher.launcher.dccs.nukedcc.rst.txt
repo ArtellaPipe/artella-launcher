@@ -1,7 +1,0 @@
-artellapipe\_launcher.launcher.dccs.nukedcc module
-==================================================
-
-.. automodule:: artellapipe_launcher.launcher.dccs.nukedcc
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -1,7 +1,7 @@
-artellapipe_launcher
-====================
+artellapipe
+===========
 
 .. toctree::
    :maxdepth: 4
 
-   artellapipe_launcher
+   artellapipe

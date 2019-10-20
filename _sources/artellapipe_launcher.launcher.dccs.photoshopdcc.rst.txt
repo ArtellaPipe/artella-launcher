@@ -1,7 +1,0 @@
-artellapipe\_launcher.launcher.dccs.photoshopdcc module
-=======================================================
-
-.. automodule:: artellapipe_launcher.launcher.dccs.photoshopdcc
-   :members:
-   :undoc-members:
-   :show-inheritance:

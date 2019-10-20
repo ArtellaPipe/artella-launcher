@@ -1,7 +1,0 @@
-artellapipe\_launcher.launcher.core.defines module
-==================================================
-
-.. automodule:: artellapipe_launcher.launcher.core.defines
-   :members:
-   :undoc-members:
-   :show-inheritance:
