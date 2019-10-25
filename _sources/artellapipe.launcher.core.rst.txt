@@ -6,11 +6,9 @@ Submodules
 
 .. toctree::
 
-   artellapipe.launcher.core.config
    artellapipe.launcher.core.defines
    artellapipe.launcher.core.launcher
    artellapipe.launcher.core.plugin
-   artellapipe.launcher.core.updater
 
 Module contents
 ---------------
