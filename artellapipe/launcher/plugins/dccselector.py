@@ -486,8 +486,7 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
             install_path = self.launcher.install_path
             if not install_path or not os.path.isdir(install_path):
-                msg = 'Current installation path does not exists: {}. Aborting DCC launch ...'.format(
-                        install_path, self.project.name.title())
+                msg = 'Current installation path does not exists: {}. Aborting DCC launch ...'.format(install_path)
                 self._set_text(msg)
                 LOGGER.error(msg)
                 sys.exit()
@@ -526,7 +525,7 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
                             else:
                                 LOGGER.warning(
                                     'Impossible to register Bootstrap Path for Project "{}" and DCC "{}"'.format(
-                                    self.project.get_clean_name(), self._selected_dcc))
+                                        self.project.get_clean_name(), self._selected_dcc))
                 except ImportError:
                     continue
 
@@ -578,8 +577,7 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
             try:
                 import spigot
             except ImportError:
-                LOGGER.error('Impossible to import Artella Python modules! Maybe Artella is not installed properly. ' \
-                      'Contact TD please!')
+                LOGGER.error('Impossible to import Artella Python modules! Maybe Artella is not installed properly.')
 
             launch_fn = self._dccs[selected_dcc].launch_fn
             if not launch_fn:

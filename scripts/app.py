@@ -56,7 +56,7 @@ class ArtellaUpdaterException(Exception, object):
 
 class ArtellaUpdater(QWidget, object):
     def __init__(
-            self, project_name, app_version, deployment_repository, environment='production', documentation_url=None,
+            self, project_name, app_version, deployment_repository, documentation_url=None,
             deploy_tag=None, install_env_var=None, requirements_file_name=None,
             force_venv=False, splash_path=None, script_path=None, dev=False,
             parent=None):
@@ -405,7 +405,6 @@ class ArtellaUpdater(QWidget, object):
             border-radius: 5px;
             padding: 1px 0px 1px 3px;
         }
-        
         QComboBox::drop-down:!editable
         {
             background: rgba(50, 50, 50, 100);
@@ -438,7 +437,8 @@ class ArtellaUpdater(QWidget, object):
 
         res = QMessageBox.question(
             self._splash, 'Installing tag version: "{}"'.format(new_tag),
-            'Are you sure you want to install this version: "{}"?'.format(new_tag), QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+            'Are you sure you want to install this version: "{}"?'.format(new_tag),
+            QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
         if res == QMessageBox.Yes:
             LOGGER.info("Installing tag version: {}".format(new_tag))
             self._deploy_tag = new_tag
@@ -647,7 +647,8 @@ class ArtellaUpdater(QWidget, object):
                 self._deploy_tag_combo.addItem(release)
         finally:
             if self._deploy_tag:
-                deploy_tag_index = [i for i in range(self._deploy_tag_combo.count()) if self._deploy_tag_combo.itemText(i) == self._deploy_tag]
+                deploy_tag_index = [i for i in range(self._deploy_tag_combo.count())
+                                    if self._deploy_tag_combo.itemText(i) == self._deploy_tag]
                 if deploy_tag_index:
                     self._selected_tag_index = deploy_tag_index[0]
                     self._deploy_tag_combo.setCurrentIndex(self._selected_tag_index)
@@ -742,9 +743,9 @@ class ArtellaUpdater(QWidget, object):
 
         self._splash.close()
 
-        # if not self._dev:
-        #     time.sleep(4)
-        #     QApplication.instance().quit()
+        if not self._dev:
+            time.sleep(3)
+            QApplication.instance().quit()
 
     def _check_installation_path(self, install_path):
         """
@@ -1519,7 +1520,8 @@ class ArtellaUpdater(QWidget, object):
 
         LOGGER.debug('ARTELLA FOLDER: {}'.format(artella_folder))
         if not os.path.exists(artella_folder):
-            QMessageBox.information(None,
+            QMessageBox.information(
+                self._splash,
                 'Artella Folder not found!',
                 'Artella App Folder {} does not exists! Make sure that Artella is installed in your computer!')
 

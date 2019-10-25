@@ -14,6 +14,7 @@ import contextlib
 
 from Qt.QtWidgets import QApplication
 
+
 @contextlib.contextmanager
 def application():
     app = QApplication.instance()

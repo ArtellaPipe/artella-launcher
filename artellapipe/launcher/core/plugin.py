@@ -37,7 +37,7 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
 
     launched = Signal(object)
 
-    def __init__(self, project, launcher=None, parent=None,  **kwargs):
+    def __init__(self, project, launcher=None, parent=None, **kwargs):
 
         self._config = None
         self._project = project
