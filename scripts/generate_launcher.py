@@ -151,11 +151,14 @@ class LauncherGenerator(object):
     def _get_default_app_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app.py')
 
+    def _get_resources_path(self):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
+
     def _get_default_icon_path(self):
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'artella_icon.ico')
+        return os.path.join(self._get_resources_path(), 'artella_icon.ico')
 
     def _get_default_splash_path(self):
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'splash.png')
+        return os.path.join(self._get_resources_path(), 'splash.png')
 
     def _cleanup(self):
         exe_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '{}.exe'.format(self._project_name))
@@ -215,16 +218,34 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 import sys
+import argparse
+import contextlib
 
 from Qt.QtWidgets import QApplication
 
+@contextlib.contextmanager
+def application():
+    app = QApplication.instance()
+
+    if not app:
+        app = QApplication(sys.argv)
+        yield app
+        app.exec_()
+    else:
+        yield app
+
+
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    from {0} import launcher
-    launcher.init()
-    from {0}.launcher import launcher
-    launcher.run()
-    app.exec_()
+
+    parser = argparse.ArgumentParser(description='Generate Python Virtual Environment to generate launcher')
+    parser.add_argument('--install-path', required=True)
+    args = parser.parse_args()
+
+    with application() as app:
+        from {0} import launcher
+        launcher.init()
+        from {0}.launcher import launcher
+        launcher.run(install_path=args.install_path)
 """.format(self._get_clean_name())
 
         script_path = self._get_launcher_script_path()
@@ -293,7 +314,8 @@ if __name__ == '__main__':
         data_files = [
             self._get_default_splash_path(),
             self._get_config_path(),
-            self._get_launcher_script_path()
+            self._get_launcher_script_path(),
+            self._get_resources_path()
         ]
 
         for data in data_files:

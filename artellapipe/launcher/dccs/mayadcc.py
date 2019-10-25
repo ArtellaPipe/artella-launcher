@@ -95,4 +95,9 @@ def launch(exec_, setup_path=None):
         return None
 
     cmd = [exec_]
-    subprocess.Popen(cmd)
+
+    curr_env = dict()
+    for k, v in os.environ.items():
+        curr_env[k] = str(v)
+
+    subprocess.Popen(cmd, close_fds=True, env=curr_env)

@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 import json
 import shutil
 import appdirs
@@ -11,6 +12,7 @@ import argparse
 import platform
 import requests
 import traceback
+import contextlib
 import subprocess
 import webbrowser
 from pathlib2 import Path
@@ -38,6 +40,9 @@ except ImportError:
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
+ARTELLA_APP_NAME = 'lifecycler'
+ARTELLA_NEXT_VERSION_FILE_NAME = 'version_to_run_next'
+
 
 class ArtellaUpdaterException(Exception, object):
     def __init__(self, exc):
@@ -53,16 +58,18 @@ class ArtellaUpdater(QWidget, object):
     def __init__(
             self, project_name, app_version, deployment_repository, environment='production', documentation_url=None,
             deploy_tag=None, install_env_var=None, requirements_file_name=None,
-            force_venv=False, splash_path=None, script_path=None,
+            force_venv=False, splash_path=None, script_path=None, dev=False,
             parent=None):
         super(ArtellaUpdater, self).__init__(parent=parent)
 
         self._config_data = self._read_config()
 
-        self._project_name = project_name if project_name else self._get_config('name')
+        self._dev = dev
+        self._project_name = project_name if project_name else self._get_app_config('name')
         self._app_version = app_version if app_version else '0.0.0'
-        self._repository = deployment_repository if deployment_repository else self._get_config('repository')
-        self._splash_path = splash_path if splash_path and os.path.isfile(splash_path) else self._get_config('splash')
+        self._repository = deployment_repository if deployment_repository else self._get_app_config('repository')
+        self._splash_path = splash_path if splash_path and os.path.isfile(splash_path) else \
+            self._get_app_config('splash')
         self._force_venv = force_venv
         self._venv_info = dict()
 
@@ -73,14 +80,18 @@ class ArtellaUpdater(QWidget, object):
         QApplication.instance().processEvents()
 
         self._install_path = None
+        self._selected_tag_index = None
         self._requirements_path = None
         self._documentation_url = documentation_url if documentation_url else self._get_default_documentation_url()
         self._install_env_var = install_env_var if install_env_var else self._get_default_install_env_var()
         self._requirements_file_name = requirements_file_name if requirements_file_name else 'requirements.txt'
-        self._deploy_tag = deploy_tag if deploy_tag else self._get_latest_deploy_tag()
+        self._all_tags = list()
+        self._deploy_tag = deploy_tag if deploy_tag else self._get_deploy_tag()
         self._script_path = script_path if script_path and os.path.isfile(script_path) else self._get_script_path()
 
-        self.init()
+        valid_load = self._load()
+        if not valid_load:
+            sys.exit()
 
     @property
     def project_name(self):
@@ -198,7 +209,7 @@ class ArtellaUpdater(QWidget, object):
 
         return data
 
-    def _get_config(self, config_name):
+    def _get_app_config(self, config_name):
         """
         Returns configuration parameter stored in configuration, if exists
         :param config_name: str
@@ -214,7 +225,7 @@ class ArtellaUpdater(QWidget, object):
         script_path = None
         config_file_name = 'launcher.py'
         script_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'scripts', config_file_name)
+            os.path.dirname(os.path.abspath(__file__)), config_file_name)
         if not os.path.isfile(script_path):
             script_path = os.path.join(os.path.dirname(sys.executable), 'resources', config_file_name)
             if not os.path.isfile(script_path):
@@ -225,6 +236,16 @@ class ArtellaUpdater(QWidget, object):
 
         return script_path
 
+    def _get_resource(self, resource_name):
+        resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', resource_name)
+        if not os.path.isfile(resource_path):
+            resource_path = os.path.join(os.path.dirname(sys.executable), 'resources', resource_name)
+            if not os.path.isfile(resource_path):
+                if hasattr(sys, '_MEIPASS'):
+                    resource_path = os.path.join(sys._MEIPASS, 'resources', resource_name)
+
+        return resource_path
+
     def _set_splash_text(self, new_text):
         self._progress_text.setText(new_text)
         QApplication.instance().processEvents()
@@ -232,17 +253,97 @@ class ArtellaUpdater(QWidget, object):
     def _setup_ui(self):
         splash_pixmap = QPixmap(self._splash_path)
         self._splash = QSplashScreen(splash_pixmap)
+        self._splash.mousePressEvent = self._splash_mouse_event_override
         self._splash.setWindowFlags(Qt.FramelessWindowHint)
-        self._splash.setEnabled(False)
         splash_layout = QVBoxLayout()
         splash_layout.setContentsMargins(5, 2, 5, 2)
         splash_layout.setSpacing(2)
         splash_layout.setAlignment(Qt.AlignBottom)
         self._splash.setLayout(splash_layout)
 
-        self._version_lbl = QLabel()
-        self._install_path_lbl = QLabel()
-        self._deploy_tag_lbl = QLabel()
+        label_style = """
+        QLabel
+        {
+            background-color: rgba(100, 100, 100, 100);
+            color: white;
+            border-radius: 5px;
+        }
+        """
+
+        self._version_lbl = QLabel('v0.0.0')
+        self._version_lbl.setStyleSheet(label_style)
+        version_font = self._version_lbl.font()
+        version_font.setPointSize(10)
+        self._version_lbl.setFont(version_font)
+
+        self._artella_status_icon = QLabel()
+        self._artella_status_icon.setPixmap(QPixmap(self._get_resource('artella_off.png')).scaled(QSize(30, 30)))
+
+        install_path_icon = QLabel()
+        install_path_icon.setPixmap(QPixmap(self._get_resource('disk.png')).scaled(QSize(25, 25)))
+        self._install_path_lbl = QLabel('Install Path: ...')
+        self._install_path_lbl.setStyleSheet(label_style)
+        install_path_font = self._install_path_lbl.font()
+        install_path_font.setPointSize(8)
+        self._install_path_lbl.setFont(install_path_font)
+        deploy_tag_icon = QLabel()
+        deploy_tag_icon.setPixmap(QPixmap(self._get_resource('tag.png')).scaled(QSize(25, 25)))
+        self._deploy_tag_combo = QComboBox()
+        info_layout = QVBoxLayout()
+        info_layout.setContentsMargins(5, 5, 5, 5)
+        info_layout.setSpacing(10)
+
+        buttons_style = """
+        QPushButton:!hover
+        {
+            background-color: rgba(100, 100, 100, 100);
+            color: white;
+            border-radius: 5px;
+        }
+        QPushButton:hover
+        {
+            background-color: rgba(50, 50, 50, 100);
+            color: white;
+            border-radius: 5px;
+        }
+        QPushButton:pressed
+        {
+            background-color: rgba(15, 15, 15, 100);
+            color: white;
+            border-radius: 5px;
+        }
+        """
+
+        self._launch_btn = QPushButton('Launch')
+        self._launch_btn.setStyleSheet(buttons_style)
+        self._launch_btn.setFixedWidth(150)
+        self._launch_btn.setFixedHeight(30)
+        self._launch_btn.setIconSize(QSize(40, 40))
+        self._launch_btn.setIcon(QPixmap(self._get_resource('play.png')))
+        self._close_btn = QPushButton('')
+        self._close_btn.setFlat(True)
+        self._close_btn.setFixedSize(QSize(30, 30))
+        self._close_btn.setIconSize(QSize(25, 25))
+        self._close_btn.setIcon(QPixmap(self._get_resource('close.png')))
+        self._open_install_folder_btn = QPushButton('Open Install Folder')
+        self._open_install_folder_btn.setStyleSheet(buttons_style)
+        self._open_install_folder_btn.setFixedWidth(150)
+        self._open_install_folder_btn.setFixedHeight(30)
+        self._open_install_folder_btn.setIconSize(QSize(25, 25))
+        self._open_install_folder_btn.setIcon(QPixmap(self._get_resource('search_folder.png')))
+        self._uninstall_btn = QPushButton('Uninstall')
+        self._uninstall_btn.setStyleSheet(buttons_style)
+        self._uninstall_btn.setFixedWidth(150)
+        self._uninstall_btn.setFixedHeight(30)
+        self._uninstall_btn.setIconSize(QSize(30, 30))
+        self._uninstall_btn.setIcon(QPixmap(self._get_resource('uninstall.png')))
+        self._buttons_layout = QVBoxLayout()
+        self._buttons_layout.setContentsMargins(5, 5, 5, 5)
+        self._buttons_layout.setSpacing(2)
+        self._buttons_layout.addWidget(self._launch_btn)
+        self._buttons_layout.addWidget(self._open_install_folder_btn)
+        self._buttons_layout.addWidget(self._uninstall_btn)
+
         self._progress_text = QLabel('Setting {} ...'.format(self._project_name.title()))
         self._progress_text.setAlignment(Qt.AlignCenter)
         self._progress_text.setStyleSheet("QLabel { background-color : rgba(0, 0, 0, 180); color : white; }")
@@ -250,26 +351,185 @@ class ArtellaUpdater(QWidget, object):
         font.setPointSize(10)
         self._progress_text.setFont(font)
 
-        install_path_layout = QHBoxLayout()
-        install_path_layout.setContentsMargins(5, 5, 5, 5)
-        install_path_layout.setSpacing(2)
-        install_path_layout.addWidget(self._version_lbl)
-        install_path_layout.addItem(QSpacerItem(15, 0, QSizePolicy.Preferred, QSizePolicy.Preferred))
-        install_path_layout.addWidget(self._install_path_lbl)
-        install_path_layout.addItem(QSpacerItem(15, 0, QSizePolicy.Preferred, QSizePolicy.Preferred))
-        install_path_layout.addWidget(self._deploy_tag_lbl)
-        install_path_layout.addItem(QSpacerItem(10, 0, QSizePolicy.Expanding, QSizePolicy.Preferred))
-        splash_layout.addLayout(install_path_layout)
+        second_layout = QHBoxLayout()
+        second_layout.setContentsMargins(5, 5, 5, 5)
+        second_layout.setSpacing(5)
+        second_layout.addItem(QSpacerItem(10, 0, QSizePolicy.Expanding, QSizePolicy.Preferred))
+        second_layout.addLayout(self._buttons_layout)
+        second_layout.addItem(QSpacerItem(10, 0, QSizePolicy.Expanding, QSizePolicy.Preferred))
+
+        splash_layout.addLayout(second_layout)
         splash_layout.addWidget(self._progress_text)
+
+        self._artella_status_icon.setParent(self._splash)
+        self._version_lbl.setParent(self._splash)
+        self._close_btn.setParent(self._splash)
+        install_path_icon.setParent(self._splash)
+        self._install_path_lbl.setParent(self._splash)
+        deploy_tag_icon.setParent(self._splash)
+        self._deploy_tag_combo.setParent(self._splash)
+
+        self._artella_status_icon.setFixedSize(QSize(45, 45))
+        self._version_lbl.setFixedSize(50, 20)
+        install_path_icon.setFixedSize(QSize(35, 35))
+        self._install_path_lbl.setFixedSize(QSize(200, 20))
+        deploy_tag_icon.setFixedSize(QSize(35, 35))
+        self._deploy_tag_combo.setFixedSize(QSize(150, 20))
+
+        height = 5
+        self._version_lbl.move(10, self._splash.height() - 48)
+        # height += self._version_lbl.height()
+        self._artella_status_icon.move(5, height)
+        height += self._artella_status_icon.height() - 5
+        install_path_icon.move(5, height)
+        self._install_path_lbl.move(install_path_icon.width(), height + self._install_path_lbl.height() / 2 - 5)
+        height += install_path_icon.height() - 5
+        deploy_tag_icon.move(5, height)
+        height = height + self._deploy_tag_combo.height() / 2 - 5
+        self._deploy_tag_combo.move(deploy_tag_icon.width(), height)
+        self._close_btn.move(self._splash.width() - self._close_btn.width() - 5, 0)
+
+        self._deploy_tag_combo.setFocusPolicy(Qt.NoFocus)
+
+        combo_width = 5
+        if self._dev:
+            self._deploy_tag_combo.setEnabled(False)
+            # self._deploy_tag_combo.setFixedSize(QSize(30, 20))
+            combo_width = 0
+
+        self._deploy_tag_combo.setStyleSheet("""
+        QComboBox:!editable
+        {
+            background-color: rgba(100, 100, 100, 100);
+            color: white;
+            border-radius: 5px;
+            padding: 1px 0px 1px 3px;
+        }
+        
+        QComboBox::drop-down:!editable
+        {
+            background: rgba(50, 50, 50, 100);
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+            image: none;
+            width: %dpx;
+        }
+        """ % combo_width)
+
+        self._close_btn.setVisible(False)
+        self._launch_btn.setVisible(False)
+        self._open_install_folder_btn.setVisible(False)
+        self._uninstall_btn.setVisible(False)
+
+        self._deploy_tag_combo.currentIndexChanged.connect(self._on_selected_tag)
+        self._close_btn.clicked.connect(QApplication.instance().quit)
+        self._open_install_folder_btn.clicked.connect(self._on_open_installation_folder)
+        self._launch_btn.clicked.connect(self.launch)
+        self._uninstall_btn.clicked.connect(self._on_uninstall)
 
         self._splash.show()
         self._splash.raise_()
+
+    def _on_selected_tag(self, new_index):
+        new_tag = self._deploy_tag_combo.itemText(new_index)
+        if not new_tag:
+            LOGGER.error('New Tag "{}" is not valid!'.format(new_tag))
+            return
+
+        res = QMessageBox.question(
+            self._splash, 'Installing tag version: "{}"'.format(new_tag),
+            'Are you sure you want to install this version: "{}"?'.format(new_tag), QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+        if res == QMessageBox.Yes:
+            LOGGER.info("Installing tag version: {}".format(new_tag))
+            self._deploy_tag = new_tag
+            self._selected_tag_index = new_index
+            self._set_config('tag', new_tag)
+            self._load()
+        else:
+            try:
+                self._deploy_tag_combo.blockSignals(True)
+                self._deploy_tag_combo.setCurrentIndex(self._selected_tag_index)
+            finally:
+                self._deploy_tag_combo.blockSignals(False)
+
+    def _on_open_installation_folder(self):
+        """
+        Internal callback function that is called when the user press Open Installation Folder button
+        """
+
+        install_path = self._get_installation_path()
+        if install_path and os.path.isdir(install_path) and len(os.listdir(install_path)) != 0:
+            self._open_folder(install_path)
+        else:
+            LOGGER.warning('{} environment not installed!'.format(self._project_name))
+
+    def _open_folder(self, path=None):
+        """
+        Opens a folder in the explorer in a independent platform way
+        If not path is passed the current directory will be opened
+        :param path: str, folder path to open
+        """
+
+        if path is None:
+            path = os.path.curdir
+        if sys.platform == 'darwin':
+            subprocess.check_call(['open', '--', path])
+        elif sys.platform == 'linux2':
+            subprocess.Popen(['xdg-open', path])
+        elif sys.platform is 'windows' or 'win32' or 'win64':
+            new_path = path.replace('/', '\\')
+            try:
+                subprocess.check_call(['explorer', new_path], shell=False)
+            except Exception:
+                pass
+
+    def _on_uninstall(self):
+        """
+        Internal callback function that is called when the user press Uninstall button
+        Removes environment variable and Tools folder
+        :return:
+        """
+
+        question_flags = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+
+        install_path = self._get_installation_path()
+        if install_path and os.path.isdir(install_path):
+            dirs_to_remove = [os.path.join(install_path, self.get_clean_name())]
+            res = QMessageBox.question(
+                self._splash, 'Uninstalling {} Tools'.format(self._project_name),
+                'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
+                    self._project_name, '\n\t'.join(dirs_to_remove)), question_flags)
+            if res == QMessageBox.Yes:
+                try:
+                    for d in dirs_to_remove:
+                        if os.path.isdir(d):
+                            shutil.rmtree(d, ignore_errors=True)
+                        elif os.path.isfile(d):
+                            os.remove(d)
+                    self._set_config(self._install_env_var, '')
+                    QMessageBox.information(
+                        self._splash, '{} Tools uninstalled'.format(self._project_name),
+                        '{} Tools uninstalled successfully! App will be closed now!'.format(self._project_name))
+                    QApplication.instance().quit()
+                except Exception as e:
+                    self._set_config(self._install_env_var, '')
+                    QMessageBox.critical(
+                        self._splash, 'Error during {} Tools uninstall process'.format(self._project_name),
+                        'Error during {} Tools uninstall: {} | {}\n\n'
+                        'You will need to remove following folders manually:\n\n{}'.format(
+                            self._project_name, e, traceback.format_exc(), '\n\t'.join(dirs_to_remove)))
+        else:
+            LOGGER.warning('{} tools are not installed! Launch any DCC first!'.format(self._project_name))
 
     def _setup_environment(self):
 
         if not self._install_path:
             LOGGER.error('Impossible to setup virtual environment because install path is not defined!')
             return False
+
+        if not hasattr(sys, 'real_prefix'):
+            LOGGER.error('Current Python"{}" is not installed in a virtual environment!'.format(
+                os.path.dirname(sys.executable)))
 
         LOGGER.info("Setting Virtual Environment")
         venv_path = self._get_venv_folder_path()
@@ -379,33 +639,84 @@ class ArtellaUpdater(QWidget, object):
 
         return True
 
-    def init(self):
+    def _init_tags_combo(self):
+        all_releases = self._get_all_releases()
+        try:
+            self._deploy_tag_combo.blockSignals(True)
+            for release in all_releases:
+                self._deploy_tag_combo.addItem(release)
+        finally:
+            if self._deploy_tag:
+                deploy_tag_index = [i for i in range(self._deploy_tag_combo.count()) if self._deploy_tag_combo.itemText(i) == self._deploy_tag]
+                if deploy_tag_index:
+                    self._selected_tag_index = deploy_tag_index[0]
+                    self._deploy_tag_combo.setCurrentIndex(self._selected_tag_index)
+
+            if not self._selected_tag_index:
+                self._selected_tag_index = self._deploy_tag_combo.currentIndex()
+            self._deploy_tag_combo.blockSignals(False)
+
+    def _load(self):
         """
         Internal function that initializes Artella App
         """
 
         valid_check = self._check_setup()
         if not valid_check:
-            return
+            return False
 
         install_path = self._set_installation_path()
         if not install_path:
-            return
-        self._version_lbl.setText(str('{}'.format(self._app_version)))
-        self._install_path_lbl.setText('Install Path: {}'.format(install_path))
-        self._deploy_tag_lbl.setText('Deployment Tag: {}'.format(self._deploy_tag))
+            return False
+        self._version_lbl.setText(str('v{}'.format(self._app_version)))
+        self._install_path_lbl.setText(install_path)
+        self._install_path_lbl.setToolTip(install_path)
+
+        self._init_tags_combo()
 
         valid_venv = self._setup_environment()
         if not valid_venv:
-            return
+            return False
         if not self._venv_info:
             LOGGER.warning('No Virtual Environment info retrieved ...')
-            return
+            return False
         valid_install = self._setup_deployment()
         if not valid_install:
-            return
+            return False
+        valid_artella = self._setup_artella()
+        if not valid_artella:
+            self._artella_status_icon.setPixmap(QPixmap(self._get_resource('artella_error.png')).scaled(QSize(30, 30)))
+            self._artella_status_icon.setToolTip('Error while connecting to Artella server!')
+            return False
+        else:
+            self._artella_status_icon.setPixmap(QPixmap(self._get_resource('artella_ok.png')).scaled(QSize(30, 30)))
+            self._artella_status_icon.setToolTip('Artella Connected!')
 
-        self._splash.close()
+        self._set_splash_text('{} Launcher is ready to lunch!'.format(self._project_name))
+
+        self._close_btn.setVisible(True)
+
+        # We check that stored config path exits
+        stored_path = self._get_app_config(self._install_env_var)
+        if stored_path and not os.path.isdir(stored_path):
+            self._set_config(self._install_env_var, '')
+
+        path_install = self._get_installation_path()
+        is_installed = path_install and os.path.isdir(path_install)
+        if is_installed:
+            self._launch_btn.setVisible(True)
+            if not self._dev:
+                self._open_install_folder_btn.setVisible(True)
+                self._uninstall_btn.setVisible(True)
+        else:
+            QMessageBox.warning(
+                self,
+                'Was not possible to install {} environment.'.format(self._project_name),
+                'Was not possible to install {} environment.\n\n'
+                'Relaunch the app. If the problem persists, please contact your project TD'.format(
+                    self._project_name))
+
+        return True
 
     def launch(self):
 
@@ -419,11 +730,21 @@ class ArtellaUpdater(QWidget, object):
         if not self._script_path or not os.path.isfile(self._script_path):
             raise Exception('Impossible to find launcher script!')
 
-        cmd = '"{}" "{}"'.format(py_exe, self._script_path)
         LOGGER.info('Executing {} Launcher ...'.format(self._project_name))
 
-        QApplication.instance().quit()
-        process = subprocess.call(cmd, shell=False)
+        paths_to_register = self._get_paths_to_register()
+
+        process_cmd = '"{}" "{}" --install-path "{}" --paths-to-register "{}"'.format(
+            py_exe, self._script_path, self._install_path, '"{0}"'.format(' '.join(paths_to_register)))
+        if self._dev:
+            process_cmd += ' --dev'
+        process = subprocess.Popen(process_cmd, close_fds=True)
+
+        self._splash.close()
+
+        # if not self._dev:
+        #     time.sleep(4)
+        #     QApplication.instance().quit()
 
     def _check_installation_path(self, install_path):
         """
@@ -436,6 +757,9 @@ class ArtellaUpdater(QWidget, object):
             return False
 
         return True
+
+    def _splash_mouse_event_override(self, event):
+        pass
 
     def _set_installation_path(self):
         """
@@ -581,8 +905,14 @@ class ArtellaUpdater(QWidget, object):
         :return: str
         """
 
-        config_data = self.get_config_data()
-        install_path = config_data.get(self.install_env_var, '')
+        if self._dev:
+            if hasattr(sys, 'real_prefix'):
+                install_path = os.path.dirname(os.path.dirname(sys.executable))
+            else:
+                install_path = os.path.dirname(sys.executable)
+        else:
+            config_data = self.get_config_data()
+            install_path = config_data.get(self.install_env_var, '')
 
         return install_path
 
@@ -606,19 +936,101 @@ class ArtellaUpdater(QWidget, object):
         else:
             return 'https://github.com/{}/archive/{}.tar.gz'.format(self._repository, self._deploy_tag)
 
+    def _sanitize_github_version(self, version):
+        """extract what appears to be the version information"""
+        s = re.search(r'([0-9]+([.][0-9]+)+(rc[0-9]?)?)', version)
+        if s:
+            return s.group(1)
+        else:
+            return version.strip()
+
+    def _get_all_releases(self):
+        """
+        Internal function that returns a list with all released versions of the deploy repository taking into account
+        the project name
+        :return: list(str)
+        """
+
+        if self._dev:
+            return ['DEV']
+
+        all_versions = list()
+
+        repository = self._get_deploy_repository_url(release=True)
+        if not repository:
+            LOGGER.error(
+                '> Project {} GitHub repository is not valid! {}'.format(self._project_name.title(), repository))
+            return None
+
+        if repository.startswith('https://github.com/'):
+            repository = "/".join(repository.split('/')[3:5])
+
+        release_url = "https://github.com/{}/releases".format(repository)
+        response = requests.get(release_url, headers={'Connection': 'close'})
+        html = response.text
+        LOGGER.debug('Parsing HTML of {} GitHub release page ...'.format(self._project_name.title()))
+
+        soup = BeautifulSoup(html, 'lxml')
+
+        releases = soup.findAll(class_='release-entry')
+        for release in releases:
+            release_a = release.find("a")
+            if not release_a:
+                continue
+            the_version = release_a.text
+            if 'Latest' in the_version:
+                label_latest = release.find(class_='label-latest', recursive=False)
+                if label_latest:
+                    the_version = release.find(class_='css-truncate-target').text
+                    the_version = self._sanitize_github_version(the_version)
+            else:
+                the_version = self._sanitize_github_version(the_version)
+
+            if the_version not in all_versions:
+                all_versions.append(the_version)
+
+        return all_versions
+
+    def _get_deploy_tag(self):
+        """
+        Internal function that returns the current tag that should be used for deployment
+        :return: str
+        """
+
+        if self._dev:
+            return 'DEV'
+
+        config_data = self.get_config_data()
+        deploy_tag = config_data.get('tag', '')
+        latest_deploy_tag = self._get_latest_deploy_tag()
+        if not deploy_tag:
+            deploy_tag = latest_deploy_tag
+        else:
+            deploy_tag_v = Version(deploy_tag)
+            latest_tag_v = Version(latest_deploy_tag)
+            if latest_tag_v > deploy_tag_v:
+                res = QMessageBox.question(
+                    self._splash, 'Newer version found: {}'.format(latest_deploy_tag),
+                    'Current Version: {}\nNew Version: {}\n\nDo you want to install new version?'.format(
+                        deploy_tag, latest_deploy_tag), QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+                if res == QMessageBox.Yes:
+                    self._set_config('tag', latest_deploy_tag)
+                    deploy_tag = latest_deploy_tag
+
+        LOGGER.info("Deploy Tag to use: {}".format(deploy_tag))
+
+        return deploy_tag
+
     def _get_latest_deploy_tag(self, sniff=True, validate=True, format='version', pre=False):
         """
         Returns last deployed version of the given repository in GitHub
         :return: str
         """
 
-        def sanitize_version(version):
-            """extract what appears to be the version information"""
-            s = re.search(r'([0-9]+([.][0-9]+)+(rc[0-9]?)?)', version)
-            if s:
-                return s.group(1)
-            else:
-                return version.strip()
+        if self._dev:
+            return 'DEV'
+
+        self._all_tags = list()
 
         version = None
         description = None
@@ -650,7 +1062,7 @@ class ArtellaUpdater(QWidget, object):
                         if not release_a:
                             continue
                         the_version = release_a.text
-                        the_version = sanitize_version(the_version)
+                        the_version = self._sanitize_github_version(the_version)
                         if validate:
                             try:
                                 LOGGER.debug("Trying version {}.".format(the_version))
@@ -677,7 +1089,7 @@ class ArtellaUpdater(QWidget, object):
                         label_latest = r.find(class_='label-latest', recursive=False)
                     if label_latest:
                         the_version = r.find(class_='css-truncate-target').text
-                        the_version = sanitize_version(the_version)
+                        the_version = self._sanitize_github_version(the_version)
                         # check if version is ok and not a prerelease; move on to next tag otherwise
                         if validate:
                             try:
@@ -800,7 +1212,24 @@ class ArtellaUpdater(QWidget, object):
         if not self._install_path:
             return
 
-        return os.path.normpath(os.path.join(self._install_path, self.get_clean_name()))
+        if self._dev:
+            return os.path.normpath(self._install_path)
+        else:
+            return os.path.normpath(os.path.join(self._install_path, self.get_clean_name()))
+
+    def _get_paths_to_register(self):
+        """
+        Returns paths that will be registered in sys.path during DCC environment loading
+        :return: list(str)
+        """
+
+        paths_to_register = [self._get_installation_path()]
+
+        lib_site_folder = os.path.join(self._install_path, 'Lib', 'site-packages')
+        if os.path.isdir(lib_site_folder):
+            paths_to_register.append(lib_site_folder)
+
+        return paths_to_register
 
     def _check_venv_folder_exists(self):
         """
@@ -896,7 +1325,7 @@ class ArtellaUpdater(QWidget, object):
             )
             return False
 
-        self._set_splash_text('Installing Deployment Requirements ...')
+        self._set_splash_text('Installing {} Requirements ...'.format(self._project_name))
         LOGGER.info('Installing Deployment Requirements with PIP: {}'.format(pip_exe))
 
         pip_cmd = '"{}" install --upgrade -r "{}"'.format(pip_exe, self._requirements_path)
@@ -914,6 +1343,9 @@ class ArtellaUpdater(QWidget, object):
         if not self._venv_info:
             return False
 
+        if self._dev:
+            return True
+
         with tempfile.TemporaryDirectory() as temp_dirname:
             valid_download = self._download_deployment_requirements(temp_dirname)
             if not valid_download or not self._requirements_path or not os.path.isfile(self._requirements_path):
@@ -921,6 +1353,17 @@ class ArtellaUpdater(QWidget, object):
             valid_install = self._install_deployment_requirements()
             if not valid_install:
                 return False
+
+        return True
+
+    def _setup_artella(self):
+        self._set_splash_text('Updating Artella Paths ...')
+        self._update_artella_paths()
+        self._set_splash_text('Closing Artella App instances ...')
+        # For now we do not check if Artella was closed or not
+        self._close_all_artella_app_processes()
+        self._set_splash_text('Launching Artella App ...')
+        self._launch_artella_app()
 
         return True
 
@@ -1044,10 +1487,159 @@ class ArtellaUpdater(QWidget, object):
         except Exception as exc:
             raise Exception(exc)
 
+    def _get_artella_data_folder(self):
+        """
+        Returns last version Artella folder installation
+        :return: str
+        """
+
+        if platform.system() == 'Darwin':
+            artella_folder = os.path.join(os.path.expanduser('~/Library/Application Support/'), 'Artella')
+        elif platform.system() == 'Windows':
+            artella_folder = os.path.join(os.getenv('PROGRAMDATA'), 'Artella')
+        else:
+            return None
+
+        artella_app_version = None
+        version_file = os.path.join(artella_folder, ARTELLA_NEXT_VERSION_FILE_NAME)
+        if os.path.isfile(version_file):
+            with open(version_file) as f:
+                artella_app_version = f.readline()
+
+        if artella_app_version is not None:
+            artella_folder = os.path.join(artella_folder, artella_app_version)
+        else:
+            artella_folder = [
+                os.path.join(artella_folder, name) for name in os.listdir(artella_folder) if os.path.isdir(
+                    os.path.join(artella_folder, name)) and name != 'ui']
+            if len(artella_folder) == 1:
+                artella_folder = artella_folder[0]
+            else:
+                LOGGER.info('Artella folder not found!')
+
+        LOGGER.debug('ARTELLA FOLDER: {}'.format(artella_folder))
+        if not os.path.exists(artella_folder):
+            QMessageBox.information(None,
+                'Artella Folder not found!',
+                'Artella App Folder {} does not exists! Make sure that Artella is installed in your computer!')
+
+        return artella_folder
+
+    def _update_artella_paths(self):
+        """
+        Updates system path to add artella paths if they are not already added
+        :return:
+        """
+
+        artella_folder = self._get_artella_data_folder()
+
+        LOGGER.debug('Updating Artella paths from: {0}'.format(artella_folder))
+        if artella_folder is not None and os.path.exists(artella_folder):
+            for subdir, dirs, files in os.walk(artella_folder):
+                if subdir not in sys.path:
+                    LOGGER.debug('Adding Artella path: {0}'.format(subdir))
+                    sys.path.append(subdir)
+
+    def _close_all_artella_app_processes(self):
+        """
+        Closes all Artella app (lifecycler.exe) processes
+        :return:
+        """
+
+        # TODO: This only works with Windows and has a dependency on psutil library
+        # TODO: Find a cross-platform way of doing this
+
+        psutil_available = True
+        try:
+            import psutil
+        except ImportError:
+            psutil_available = False
+
+        if not psutil_available:
+            LOGGER.warning('Impossible to close Artella app instance because psutil is not available!')
+            return
+
+        try:
+            for proc in psutil.process_iter():
+                if proc.name() == '{}.exe'.format(ARTELLA_APP_NAME):
+                    LOGGER.debug('Killing Artella App process: {}'.format(proc.name()))
+                    proc.kill()
+            return True
+        except RuntimeError:
+            LOGGER.error('Impossible to close Artella app instances because psutil library is not available!')
+            return False
+
+    def _get_artella_app(self):
+        """
+        Returns path where Artella path is installed
+        :return: str
+        """
+
+        artella_folder = os.path.dirname(self._get_artella_data_folder())
+        return os.path.join(artella_folder, ARTELLA_APP_NAME)
+
+    def _get_artella_program_folder(self):
+        """
+        Returns folder where Artella shortcuts are located
+        :return: str
+        """
+
+        # TODO: This only works on Windows, find a cross-platform way of doing this
+
+        return os.path.join(os.environ['PROGRAMDATA'], 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Artella')
+
+    def _get_artella_launch_shortcut(self):
+        """
+        Returns path where Launch Artella shortcut is located
+        :return: str
+        """
+
+        # TODO: This only works on Windows, find a cross-platform way of doing this
+
+        return os.path.join(self._get_artella_program_folder(), 'Launch Artella.lnk')
+
+    def _launch_artella_app(self):
+        """
+        Executes Artella App
+        """
+
+        # TODO: This should not work in MAC, find a cross-platform way of doing this
+
+        if os.name == 'mac':
+            LOGGER.info('Launch Artella App: does not supports MAC yet')
+            QMessageBox.information(
+                None,
+                'Not supported in MAC',
+                'Artella Pipeline do not support automatically Artella Launch for Mac. '
+                'Please close Maya, launch Artella manually, and start Maya again!')
+            artella_app_file = self._get_artella_app() + '.bundle'
+        else:
+            #  Executing Artella executable directly does not work
+            # artella_app_file = get_artella_app() + '.exe'
+            artella_app_file = self._get_artella_launch_shortcut()
+
+        artella_app_file = artella_app_file
+        LOGGER.info('Artella App File: {0}'.format(artella_app_file))
+
+        if os.path.isfile(artella_app_file):
+            LOGGER.info('Launching Artella App ...')
+            LOGGER.debug('Artella App File: {0}'.format(artella_app_file))
+            os.startfile(artella_app_file.replace('\\', '//'))
+
+
+@contextlib.contextmanager
+def application():
+    app = QApplication.instance()
+
+    if not app:
+        app = QApplication(sys.argv)
+        yield app
+        app.exec_()
+    else:
+        yield app
+
 
 if __name__ == '__main__':
-
-    app = QApplication(sys.argv)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--project-name', required=False)
@@ -1057,23 +1649,26 @@ if __name__ == '__main__':
     parser.add_argument('--icon-path', required=False, default=None)
     parser.add_argument('--splash-path', required=False, default=None)
     parser.add_argument('--script-path', required=False, default=None)
+    parser.add_argument('--dev', required=False, default=False, action='store_true')
     args = parser.parse_args()
 
-    if args.icon_path:
-        app.setWindowIcon(QIcon(args.icon_path))
+    with application() as app:
 
-    new_app = None
-    valid_app = False
-    try:
-        new_app = ArtellaUpdater(
-            project_name=args.project_name,
-            app_version=args.version,
-            deployment_repository=args.repository,
-            environment=args.environment,
-            splash_path=args.splash_path,
-            script_path=args.script_path
-        )
-        valid_app = True
-        new_app.launch()
-    except Exception as exc:
-        raise ArtellaUpdaterException(exc)
+        if args.icon_path:
+            app.setWindowIcon(QIcon(args.icon_path))
+
+        new_app = None
+        valid_app = False
+        try:
+            new_app = ArtellaUpdater(
+                project_name=args.project_name,
+                app_version=args.version,
+                deployment_repository=args.repository,
+                environment=args.environment,
+                splash_path=args.splash_path,
+                script_path=args.script_path,
+                dev=args.dev
+            )
+            valid_app = True
+        except Exception as exc:
+            raise ArtellaUpdaterException(exc)

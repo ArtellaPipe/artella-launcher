@@ -38,11 +38,14 @@ class ArtellaLauncher(window.ArtellaWindow, object):
     LAUNCHER_CONFIG_PATH = launcher.get_launcher_config_path()
     LAUNCHER_PLUGINS_PATHS = list()
 
-    def __init__(self, project):
+    def __init__(self, project, install_path, paths_to_register=None, dev=False):
 
         self._logger = None
         self._name = None
         self._version = None
+        self._install_path = install_path
+        self._paths_to_register = paths_to_register if paths_to_register else list()
+        self._dev = dev
 
         super(ArtellaLauncher, self).__init__(
             project=project,
@@ -72,6 +75,15 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         """
 
         return self._version
+
+    @property
+    def dev(self):
+        """
+        Returns whether or not launcher has been launched in dev mode or not
+        :return: bool
+        """
+
+        return self._dev
 
     @property
     def icon(self):
@@ -108,6 +120,24 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         """
 
         return self._logger
+
+    @property
+    def install_path(self):
+        """
+        Returns path where pipeline tools are installed
+        :return: str
+        """
+
+        return self._install_path
+
+    @property
+    def paths_to_register(self):
+        """
+        Returns list of paths that should be added to sys.path during DCC launching
+        :return: list(str)
+        """
+
+        return self._paths_to_register
 
     def ui(self):
         super(ArtellaLauncher, self).ui()
@@ -229,11 +259,11 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         for i in range(self._plugins_tab.count()):
             plugin_widget = self._plugins_tab.widget(i)
             if plugin_widget == plugin:
-                self._plugins_tab.setCurrentWidget(plugin)
+                self._plugins_tab.setCurrentWidget(plugin_widget)
                 return
 
         try:
-            plugin_widget = plugin(project=self._project)
+            plugin_widget = plugin(project=self._project, launcher=self)
             plugin_widget.launched.connect(self._on_launch_plugin)
             self._plugins_tab.addTab(plugin_widget, plugin_widget.LABEL)
             self._plugins_tab.setCurrentWidget(plugin_widget)

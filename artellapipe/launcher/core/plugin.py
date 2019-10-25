@@ -37,10 +37,11 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
 
     launched = Signal(object)
 
-    def __init__(self, project, parent=None, **kwargs):
+    def __init__(self, project, launcher=None, parent=None,  **kwargs):
 
-        self._project = project
         self._config = None
+        self._project = project
+        self._launcher = launcher
 
         self.init_config()
 
@@ -50,7 +51,13 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
         return self._label
 
     def __repr__(self):
-        return '{}.{}({})'.format(__name__, type(self).__name__, self.__str__())
+        return '{}.{}({})'.format(self.__name__, type(self).__name__, self.__str__())
+
+    def __eq__(self, other):
+        if issubclass(other, ArtellaLauncherPlugin):
+            return self.ID == other.ID
+
+        return False
 
     @property
     def project(self):
@@ -60,6 +67,15 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
         """
 
         return self._project
+
+    @property
+    def launcher(self):
+        """
+        Returns launcher this plugin belongs to
+        :return: ArtellaLauncher
+        """
+
+        return self._launcher
 
     @property
     def config(self):

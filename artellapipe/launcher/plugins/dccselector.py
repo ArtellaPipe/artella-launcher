@@ -16,25 +16,23 @@ import os
 import sys
 import time
 import json
-import shutil
 import random
 import logging
 import argparse
 import importlib
-import traceback
 from distutils import util
 
 from Qt.QtCore import *
 from Qt.QtWidgets import *
 
-from tpPyUtils import folder as folder_utils, path as path_utils
+from tpPyUtils import path as path_utils
 
 from tpQtLib.core import base, qtutils
-from tpQtLib.widgets import grid, splitters
+from tpQtLib.widgets import grid
 
-from artellapipe.launcher.core import defines, plugin, updater, config
-from artellapipe.core import artellalib
+
 from artellapipe.utils import exceptions, resource
+from artellapipe.launcher.core import defines, plugin
 
 LOGGER = logging.getLogger()
 
@@ -157,22 +155,18 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
     LABEL = 'DCC Launcher'
     ICON = 'launcher'
     dccSelected = Signal(str, str)
-    UPDATER_CLASS = updater.ArtellaUpdater
 
     COLUMNS_COUNT = 4
 
-    def __init__(self, project, parent=None):
+    def __init__(self, project, launcher, parent=None):
 
         self._dccs = dict()
         self._splash = None
-        self._updater = None
         self._departments = dict()
         self._selected_dcc = None
         self._selected_version = None
 
-        super(DCCSelector, self).__init__(project=project, parent=parent)
-
-        self._updater = self.UPDATER_CLASS(project=self.project, dccselector=self)
+        super(DCCSelector, self).__init__(project=project, launcher=launcher, parent=parent)
 
     def get_main_layout(self):
         """
@@ -213,21 +207,11 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
         return self._selected_version
 
-    @property
-    def updater(self):
-        """
-        Retunrs the updater used by Artella Luancher
-        :return: ArtellaUpdater
-        """
-
-        return self._updater
-
     def ui(self):
         super(DCCSelector, self).ui()
 
         self._departments_tab = QTabWidget()
         self.main_layout.addWidget(self._departments_tab)
-        self.main_layout.addLayout(splitters.SplitterLayout())
         self.add_department('All')
 
         LOGGER.debug('DCCs found: {}'.format(self._dccs))
@@ -248,57 +232,6 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
                     dcc_btn.clicked.connect(self._on_dcc_selected)
                     self.add_dcc_to_department(department, dcc_btn)
 
-        search_folder_icon = resource.ResourceManager().icon('search_folder')
-        uninstall_icon = resource.ResourceManager().icon('uninstall')
-        extra_buttons_lyt = QHBoxLayout()
-        extra_buttons_lyt.setContentsMargins(2, 2, 2, 2)
-        extra_buttons_lyt.setSpacing(5)
-        self.main_layout.addLayout(extra_buttons_lyt)
-        extra_buttons_lyt.addItem(QSpacerItem(10, 0, QSizePolicy.Expanding, QSizePolicy.Preferred))
-        self.open_folder_btn = QPushButton('Open Install folder')
-        self.open_folder_btn.setIcon(search_folder_icon)
-        self.open_folder_btn.setMaximumWidth(140)
-        self.open_folder_btn.setMinimumWidth(140)
-        self.open_folder_btn.setStyleSheet(
-            """
-            border-radius: 5px;
-            """
-        )
-        uninstall_layout = QHBoxLayout()
-        uninstall_layout.setContentsMargins(0, 0, 0, 0)
-        uninstall_layout.setSpacing(1)
-        self.uninstall_btn = QPushButton('Uninstall')
-        self.uninstall_btn.setIcon(uninstall_icon)
-        self.uninstall_btn.setMaximumWidth(80)
-        self.uninstall_btn.setMinimumWidth(80)
-        self.uninstall_btn.setStyleSheet(
-            """
-            border-top-left-radius: 5px;
-            border-bottom-left-radius: 5px;
-            """
-        )
-        self.force_uninstall_btn = QPushButton('Force')
-        self.force_uninstall_btn.setStyleSheet(
-            """
-            border-top-right-radius: 5px;
-            border-bottom-right-radius: 5px;
-            """
-        )
-        self.force_uninstall_btn.setMaximumWidth(45)
-        self.force_uninstall_btn.setMinimumWidth(45)
-        extra_buttons_lyt.addWidget(self.open_folder_btn)
-        extra_buttons_lyt.addLayout(uninstall_layout)
-        uninstall_layout.addWidget(self.uninstall_btn)
-        uninstall_layout.addWidget(self.force_uninstall_btn)
-        extra_buttons_lyt.addItem(QSpacerItem(10, 0, QSizePolicy.Expanding, QSizePolicy.Preferred))
-
-    def setup_signals(self):
-        super(DCCSelector, self).setup_signals()
-
-        self.open_folder_btn.clicked.connect(self._on_open_installation_folder)
-        self.uninstall_btn.clicked.connect(self._on_uninstall)
-        self.force_uninstall_btn.clicked.connect(self._on_force_uninstall)
-
     def init_config(self):
         mod_name = os.path.splitext(os.path.basename(os.path.abspath(__file__)))[0]
         mod_folder = os.path.dirname(os.path.abspath(__file__))
@@ -313,22 +246,6 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         """
 
         return [dcc_name for dcc_name, dcc_data in self._dccs.items() if dcc_data.enabled]
-
-    def get_installation_path(self):
-        """
-        Returns tools installation path
-        :return: str
-        """
-
-        return self._updater.get_installation_path()
-
-    def set_installation_path(self):
-        """
-        Sets tools installation path
-        :return: str
-        """
-
-        return self._updater.set_installation_path()
 
     def add_department(self, department_name):
         if department_name not in self._departments:
@@ -429,17 +346,14 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         """
 
         splash_path = resource.ResourceManager().get('images', 'splash.png', key='project')
-        if not os.path.isfile(splash_path):
-            splash_dir = os.path.dirname(splash_path)
-            splash_files = [f for f in os.listdir(splash_dir) if
-                            f.startswith('splash') and os.path.isfile(os.path.join(splash_dir, f))]
-            if splash_files:
-                splash_index = random.randint(0, len(splash_files) - 1)
-                splash_name, splash_extension = os.path.splitext(splash_files[splash_index])
-                splash_pixmap = resource.ResourceManager().pixmap(
-                    splash_name, extension=splash_extension[1:], key='project')
-            else:
-                splash_pixmap = resource.ResourceManager().pixmap('splash')
+        splash_dir = os.path.dirname(splash_path)
+        splash_files = [f for f in os.listdir(splash_dir) if
+                        f.startswith('splash') and os.path.isfile(os.path.join(splash_dir, f))]
+        if splash_files or not os.path.isfile(splash_path):
+            splash_index = random.randint(0, len(splash_files) - 1)
+            splash_name, splash_extension = os.path.splitext(splash_files[splash_index])
+            splash_pixmap = resource.ResourceManager().pixmap(
+                splash_name, extension=splash_extension[1:], key='project')
         else:
             splash_pixmap = resource.ResourceManager().pixmap('splash')
 
@@ -464,7 +378,7 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         self.main_layout.setAlignment(Qt.AlignBottom)
 
         self._splash.setLayout(self.main_layout)
-        progress_colors = self._updater.progress_colors
+        progress_colors = (self.project.progress_bar_color0, self.project.progress_bar_color1)
         self.progress_bar = QProgressBar()
         self.progress_bar.setStyleSheet(
             "QProgressBar {border: 0px solid grey; border-radius:4px; padding:0px} "
@@ -474,7 +388,7 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         self.progress_bar.setMaximum(6)
         self.progress_bar.setTextVisible(False)
 
-        self._progress_text = QLabel('Loading {} Tools ...'.format(self._project.name.title()))
+        self._progress_text = QLabel('Loading {} Tools ...'.format(self.project.name.title()))
         self._progress_text.setAlignment(Qt.AlignCenter)
         self._progress_text.setStyleSheet("QLabel { background-color : rgba(0, 0, 0, 180); color : white; }")
         font = self._progress_text.font()
@@ -498,16 +412,6 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         dcc_lbl.move(self._splash.width() - dcc_lbl.width(), 52)
         dcc_lbl.setPixmap(dcc_icon.pixmap(dcc_icon.actualSize(QSize(48, 48))))
 
-        console_icon = resource.ResourceManager().icon('console')
-        console_btn = QPushButton('')
-        console_btn.setFixedSize(QSize(42, 42))
-        console_btn.setIconSize(QSize(38, 38))
-        console_btn.setParent(self._splash)
-        console_btn.move(5, 5)
-        console_btn.setFlat(True)
-        console_btn.setIcon(console_icon)
-        # console_btn.clicked.connect(self._on_toggle_console)
-
         self._splash.show()
         self._splash.raise_()
 
@@ -518,77 +422,8 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
         """
 
         self._progress_text.setText(msg)
-        self._updater.console.write('> {}'.format(msg))
+        LOGGER.info('> {}'.format(msg))
         QApplication.instance().processEvents()
-
-    def _on_open_installation_folder(self):
-        """
-        Internal callback function that is called when the user press Open Installation Folder button
-        """
-
-        install_path = self.launcher.get_installation_path()
-        if install_path and os.path.isdir(install_path) and len(os.listdir(install_path)) != 0:
-            folder_utils.open_folder(install_path)
-        else:
-            self.show_warning_message('{} tools are not installed! Launch any DCC first!'.format(self.launcher.name))
-
-    def _on_uninstall(self):
-        """
-        Internal callback function that is called when the user press Uninstall button
-        Removes environment variable and Tools folder
-        :return:
-        """
-
-        install_path = self.launcher.get_installation_path()
-        if install_path and os.path.isdir(install_path):
-            dirs_to_remove = [os.path.join(install_path, self.launcher.project.get_clean_name())]
-            project_name = self.launcher.project.name.title()
-            res = qtutils.show_question(
-                self, 'Uninstalling {} Tools'.format(project_name),
-                'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
-                    project_name, '\n\t'.join(dirs_to_remove)))
-            if res == QMessageBox.Yes:
-                try:
-                    for d in dirs_to_remove:
-                        if os.path.isdir(d):
-                            shutil.rmtree(d, ignore_errors=True)
-                        elif os.path.isfile(d):
-                            os.remove(d)
-                    self.launcher.config.setValue(self.launcher.updater.envvar_name, None)
-                    qtutils.show_info(
-                        self, '{} Tools uninstalled'.format(project_name),
-                        '{} Tools uninstalled successfully!'.format(project_name))
-                except Exception as e:
-                    qtutils.show_error(
-                        self, 'Error during {} Tools uninstall process'.format(project_name),
-                        'Error during {} Tools uninstall: {} | {}'.format(project_name, e, traceback.format_exc()))
-        else:
-            self.show_warning_message('{} tools are not installed! Launch any DCC first!'.format(self.launcher.name))
-
-    def _on_force_uninstall(self):
-        """
-        Internal callback function that is called when the user press Force button
-        Removes environment variable. The user will have to remove installation folder manually
-        :return:
-        """
-
-        install_path = self.launcher.get_installation_path()
-        if install_path and os.path.isdir(install_path):
-            dirs_to_remove = [os.path.join(install_path, self.launcher.project.get_clean_name())]
-            project_name = self.launcher.project.name.title()
-            res = qtutils.show_question(
-                self, 'Uninstalling {} Tools'.format(project_name),
-                'Are you sure you want to uninstall {} Tools?'.format(project_name))
-            if res == QMessageBox.Yes:
-                qtutils.show_warning(
-                    self, 'Important',
-                    'You will need to remove following folders manually:\n\n{}'.format('\n\t'.join(dirs_to_remove)))
-                self.launcher.config.setValue(self.launcher.updater.envvar_name, None)
-                qtutils.show_info(
-                    self, '{} Tools uninstalled'.format(project_name),
-                    '{} Tools uninstalled successfully!'.format(project_name))
-        else:
-            self.show_warning_message('{} tools are not installed! Launch any DCC first!'.format(self.launcher.name))
 
     def _on_dcc_selected(self, selected_dcc, selected_version):
         """
@@ -629,29 +464,13 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
 
             self._setup_splash(selected_dcc)
 
-            self._updater.console.move(self._splash.geometry().center())
-            # self._updater.console.move(300, 405)
-            self._updater.console.show()
-
-            self._progress_text.setText('Creating {} Launcher Configuration ...'.format(self._project.name.title()))
-            self._updater.console.write('> Creating {} Launcher Configuration ...'.format(self._project.name.title()))
+            self._progress_text.setText('Creating {} Launcher Configuration ...'.format(self.project.name.title()))
+            LOGGER.info('> Creating {} Launcher Configuration ...'.format(self.project.name.title()))
             QApplication.instance().processEvents()
-            cfg = config.create_config(
-                launcher_name=self._project.get_clean_name(),
-                console=self._updater.console, window=None, dcc_install_path=installation_path)
-            if not cfg:
-                self._splash.close()
-                self._updater.close()
-                qtutils.show_warning(
-                    None, '{} location not found'.format(selected_dcc.title()),
-                    '{} Launcher cannot launch {}!'.format(self._project.name.title(), selected_dcc.title()))
-                return
-            QApplication.instance().processEvents()
-            self._config = cfg
 
             parser = argparse.ArgumentParser(
                 description='{} Launcher allows to setup a custom initialization for DCCs. '
-                            'This allows to setup specific paths in an easy way.'.format(self._project.name.title())
+                            'This allows to setup specific paths in an easy way.'.format(self.project.name.title())
             )
             parser.add_argument(
                 '-e', '--edit',
@@ -659,135 +478,128 @@ class DCCSelector(plugin.ArtellaLauncherPlugin, object):
                 help='Edit configuration file'
             )
 
-            args = parser.parse_args()
-            if args.edit:
-                self._updater.write(
-                    'Opening {} Launcher Configuration file to edit ...'.format(self._project.name.title()))
-                return cfg.edit()
-
-            exec_ = cfg.value('executable')
+            exec_ = os.path.abspath(installation_path)
 
             self.progress_bar.setValue(1)
             QApplication.instance().processEvents()
             time.sleep(1)
 
-            self._set_text('Updating Artella Paths ...')
-            artellalib.update_artella_paths()
+            install_path = self.launcher.install_path
+            if not install_path or not os.path.isdir(install_path):
+                msg = 'Current installation path does not exists: {}. Aborting DCC launch ...'.format(
+                        install_path, self.project.name.title())
+                self._set_text(msg)
+                LOGGER.error(msg)
+                sys.exit()
 
-            self._set_text('Closing Artella App instances ...')
-            valid_close = artellalib.close_all_artella_app_processes(console=self._updater.console)
-            self.progress_bar.setValue(2)
-            QApplication.instance().processEvents()
-            time.sleep(1)
-
-            if valid_close:
-                self._set_text('Launching Artella App ...')
-                artellalib.launch_artella_app()
-                self.progress_bar.setValue(3)
-                QApplication.instance().processEvents()
-                time.sleep(1)
-
-            install_path = cfg.value(self._updater.envvar_name)
-            if not install_path or not os.path.exists(install_path):
-                self._set_text(
-                    'Current installation path does not exists: {}. Reinstalling {} Tools ...'.format(
-                        install_path, self._project.name.title()))
-                install_path = self.set_installation_path()
-                if not install_path:
-                    sys.exit()
-
-                install_path = path_utils.clean_path(os.path.abspath(install_path))
-                id_path = path_utils.clean_path(self._project.id_path)
-                if id_path in install_path:
-                    qtutils.show_warning(
-                        None, 'Selected installation folder is not valid!',
-                        'Folder {} is not a valid installation folder. '
-                        'Please select a folder that is not inside Artella Project folder please!'.format(install_path))
-                    sys.exit()
-
-                cfg.setValue(self._updater.envvar_name, path_utils.clean_path(os.path.abspath(install_path)))
+            install_path = path_utils.clean_path(os.path.abspath(install_path))
+            id_path = path_utils.clean_path(self.project.id_path)
+            if id_path in install_path:
+                qtutils.show_warning(
+                    None, 'Installation folder is not valid!',
+                    'Folder {} is not a valid installation folder. '
+                    'Install tools in a folder that is not inside Artella Project folder please!'.format(install_path))
+                sys.exit()
 
             self.progress_bar.setValue(4)
             self._set_text('Setting {} environment variables ...'.format(selected_dcc.title()))
 
-            env_var = self._updater.envvar_name
-            folders_to_register = self.project.get_folders_to_register(full_path=False)
+            bootstrap_path = None
+
+            # We force the addition of bootstrap and external module
+            folders_to_register = list()
+            mods_to_register = self.project.modules_to_register
+            for mod_name in mods_to_register:
+                try:
+                    imported_mod = importlib.import_module(
+                        '{}.{}'.format(self.project.get_clean_name(), mod_name))
+                    if imported_mod:
+                        mod_path = os.path.dirname(imported_mod.__file__)
+                        if mod_name == 'bootstrap':
+                            mod_path = os.path.join(mod_path, self._selected_dcc.lower())
+                            if os.path.isdir(mod_path):
+                                bootstrap_path = mod_path
+
+                        if os.path.isdir(mod_path):
+                            if mod_path not in folders_to_register:
+                                folders_to_register.append(mod_path)
+                            else:
+                                LOGGER.warning(
+                                    'Impossible to register Bootstrap Path for Project "{}" and DCC "{}"'.format(
+                                    self.project.get_clean_name(), self._selected_dcc))
+                except ImportError:
+                    continue
+
+            project_folders_to_register = self.project.get_folders_to_register(full_path=False)
+            if project_folders_to_register:
+                for p in project_folders_to_register:
+                    if p not in folders_to_register:
+                        folders_to_register.append(p)
+
+            for p in self.launcher.paths_to_register:
+                if p not in folders_to_register:
+                    folders_to_register.append(p)
+                    if self.launcher.dev:
+                        for f_name in os.listdir(p):
+                            f_path = path_utils.clean_path(os.path.join(p, f_name))
+                            if f_path.endswith('-link') and os.path.isfile(f_path):
+                                with open(f_path, 'r') as f:
+                                    mod_path = str(path_utils.clean_path(f.readline()))
+                                    if mod_path and os.path.isdir(mod_path):
+                                        folders_to_register.append(mod_path)
+
             if folders_to_register:
+
+                LOGGER.info("Registering following paths: \n")
+                for f in folders_to_register:
+                    LOGGER.info(f)
+
                 if os.environ.get('PYTHONPATH'):
-                    os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + cfg.value(env_var)
+                    os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + self.launcher.install_path
                     for p in folders_to_register:
                         p = path_utils.clean_path(os.path.join(install_path, p))
                         LOGGER.debug('Adding path to PYTHONPATH: {}'.format(p))
                         os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + p
                 else:
-                    os.environ['PYTHONPATH'] = cfg.value(env_var)
+                    os.environ['PYTHONPATH'] = self.launcher.install_path
                     for p in folders_to_register:
                         p = path_utils.clean_path(os.path.join(install_path, p))
                         LOGGER.debug('Adding path to PYTHONPATH: {}'.format(p))
                         os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ';' + p
 
             self.progress_bar.setValue(5)
-            self._set_text('Checking {} tools version ...'.format(self._project.name.title()))
-            self.main_layout.addWidget(self._updater)
-            self._updater.show()
-            self._updater.raise_()
-            QApplication.instance().processEvents()
-        #     need_to_update = self._updater.check_tools_version()
-        #     os.environ[self._project.get_clean_name()+'_show'] = 'show'
-        #
-        #     self._updater.close()
-        #     self._updater.progress_bar.setValue(0)
-        #     QApplication.instance().processEvents()
-        #     time.sleep(1)
-        #
-        #     if need_to_update:
-        #         self.progress_bar.setValue(6)
-        #         self._set_text('Updating {} Tools ...'.format(self._project.name.title()))
-        #         self._updater.show()
-        #         QApplication.instance().processEvents()
-        #         self._updater.update_tools()
-        #         time.sleep(1)
-        #         self._updater.close()
-        #         self._updater.progress_bar.setValue(0)
-        #         QApplication.instance().processEvents()
-        #
-        #     self._updater.console.write_ok('{} Tools setup completed, launching: {}'.format(self._
-        #     project.name.title(), exec_))
-        #     QApplication.instance().processEvents()
-        #
-        #     # We need to import this here because this path maybe is not available until we update Artella paths
-        #     try:
-        #         import spigot
-        #     except ImportError:
-        #         self._updater.console.write_error(
-        #         'Impossible to import Artella Python modules!
-        #         Maybe Artella is not installed properly. Contact TD please!')
-        #         return
-        #
-        #     launch_fn = self._dccs[selected_dcc].launch_fn
-        #     if not launch_fn:
-        #         self._updater.console.write_error(
-        #         'Selected DCC: {} has no launch function!'.format(selected_dcc.name))
-        #         QApplication.instance().processEvents()
-        #         return
-        except Exception as e:
-            self._updater.close()
-            self._splash.close()
-            raise exceptions.ArtellaPipeException(self._project, msg=e)
+            self._set_text('Checking {} tools version ...'.format(self.project.name.title()))
 
-        # self._splash.close()
-        # self._updater.console.close()
-        #
-        # time.sleep(1)
-        #
-        # # Search for userSetup.py file
-        # setup_path = None
-        # for dir, _, files in os.walk(install_path):
-        #     if setup_path:
-        #         break
-        #     for f in files:
-        #         if f.endswith('userSetup.py'):
-        #             setup_path = path_utils.clean_path(os.path.join(dir, f))
-        #             break
-        #
-        # launch_fn(exec_=exec_, setup_path=setup_path)
+        #     os.environ[self.project.get_clean_name()+'_show'] = 'show'
+
+            time.sleep(1)
+
+            # We need to import this here because this path maybe is not available until we update Artella paths
+            try:
+                import spigot
+            except ImportError:
+                LOGGER.error('Impossible to import Artella Python modules! Maybe Artella is not installed properly. ' \
+                      'Contact TD please!')
+
+            launch_fn = self._dccs[selected_dcc].launch_fn
+            if not launch_fn:
+                LOGGER.error('Selected DCC: {} has no launch function!'.format(selected_dcc.name))
+                return
+        except Exception as e:
+            self._splash.close()
+            raise exceptions.ArtellaPipeException(self.project, msg=e)
+
+        self._splash.close()
+
+        time.sleep(1)
+
+        if not bootstrap_path or not os.path.isdir(bootstrap_path):
+            QMessageBox.warning(
+                None, 'Bootstrap Directory not found!',
+                'Bootstrap folder for Project "{}" and DCC "{}" not found. Tools will not load. '
+                'Please contact TD!'.format(self.project.get_clean_name, self._selected_dcc))
+
+        launch_fn(exec_=exec_, setup_path=bootstrap_path)
+
+        self.launcher.close()
+        QApplication.instance().quit()
