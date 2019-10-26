@@ -105,6 +105,11 @@ class ArtellaUpdater(QWidget, object):
         self._force_venv = force_venv
         self._venv_info = dict()
 
+        if self._project_name and not self._dev:
+            for proc in psutil.process_iter():
+                if proc.name().startswith(self._project_name) and proc.pid != psutil.Process().pid:
+                    proc.kill()
+
         self._setup_logger()
         self._setup_config()
 
