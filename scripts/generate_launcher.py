@@ -22,10 +22,11 @@ import subprocess
 
 
 class LauncherGenerator(object):
-    def __init__(self, project_name, repository, app_path, clean_env, clean_env_after, update_requirements,
+    def __init__(self, project_name, version, repository, app_path, clean_env, clean_env_after, update_requirements,
                  icon_path, splash_path, install_path, windowed, one_file, dev):
 
         self._project_name = project_name
+        self._version = version
         self._repository = repository
         self._clean_env = clean_env
         self._clean_env_after = clean_env_after
@@ -49,25 +50,78 @@ class LauncherGenerator(object):
 
         self._cleanup()
 
-        venv_info = self._setup_environment()
-        if not venv_info:
-            raise RuntimeError('Error while setting up virtual environment: {}!'.format(self._get_venv_name()))
-        self._install_requirements(venv_info)
+        copied_files = self._copy_resources()
 
-        self._generate_exe(venv_info)
+        try:
+            venv_info = self._setup_environment()
+            if not venv_info:
+                raise RuntimeError('Error while setting up virtual environment: {}!'.format(self._get_venv_name()))
+            self._install_requirements(venv_info)
 
-        if self._clean_env_after:
-            venv_folder = venv_info['venv_folder']
-            if os.path.isdir(venv_folder):
-                shutil.rmtree(venv_folder)
+            self._generate_exe(venv_info)
 
-        self._cleanup()
+            if self._clean_env_after:
+                venv_folder = venv_info['venv_folder']
+                if os.path.isdir(venv_folder):
+                    shutil.rmtree(venv_folder)
+
+            self._cleanup()
+        except Exception as exc:
+            raise Exception(exc)
+        finally:
+            self._clean_resources(copied_files)
 
     def _get_clean_name(self):
+        """
+        Internal function that returns a clean version of the project name
+        :return: str
+        """
+
         return self._project_name.replace(' ', '').lower()
 
     def _get_venv_name(self):
+        """
+        Internal function that returns the name of the virtual environment
+        :return: str
+        """
+
         return '{}_dev'.format(self._get_clean_name())
+
+    def _copy_resources(self):
+        """
+        Internal function that copies resources into resources folder
+        :return: list(str)
+        """
+
+        copied_resources = list()
+
+        paths_to_check = {
+            self._get_default_splash_path(): self._splash_path,
+            self._get_default_icon_path(): self._icon_path
+        }
+
+        for def_path, res_path in paths_to_check.items():
+            if def_path != res_path:
+                target_dir = os.path.dirname(def_path)
+                splash_name = os.path.basename(res_path)
+                new_path = os.path.join(target_dir, splash_name)
+                if not os.path.isfile(new_path):
+                    shutil.copy(res_path, new_path)
+                    if os.path.isfile(new_path):
+                        copied_resources.append(new_path)
+
+        return copied_resources
+
+
+    def _clean_resources(self, resources_to_clean):
+        """
+        Internal function that deletes all the given resource paths
+        :param resources_to_clean: list(str)
+        """
+
+        for res in resources_to_clean:
+            if res and os.path.isfile(res):
+                os.remove(res)
 
     def _setup_environment(self):
         """
@@ -195,8 +249,10 @@ class LauncherGenerator(object):
     def _generate_config_file(self):
         config_data = {
             'name': self._project_name,
+            'version': self._version,
             'repository': self._repository,
-            'splash': self._splash_path
+            'splash': os.path.basename(self._splash_path),
+            'icon': os.path.basename(self._icon_path)
         }
 
         config_path = self._get_config_path()
@@ -262,6 +318,7 @@ class LauncherGenerator(object):
         add_data_cmd = '--add-data'
         data_files = [
             self._get_default_splash_path(),
+            self._get_default_icon_path(),
             self._get_config_path(),
             self._get_launcher_script_path(),
             self._get_resources_path()
@@ -301,6 +358,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate Python Virtual Environment to generate launcher')
     parser.add_argument(
         '--name', required=False, default='artella', help='Name of the Python environment')
+    parser.add_argument(
+        '--version', required=False, default='0.0.0', help='Version of the Launcher Tool')
     parser.add_argument(
         '--repository', required=False, default='', help='URL where GitHub deployment repository is located')
     parser.add_argument(
@@ -342,6 +401,7 @@ if __name__ == '__main__':
 
     launcher_generator = LauncherGenerator(
         project_name=args.name,
+        version=args.version,
         repository=args.repository,
         app_path=args.app_path,
         clean_env=args.clean,

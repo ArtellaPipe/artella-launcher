@@ -45,6 +45,34 @@ ARTELLA_APP_NAME = 'lifecycler'
 ARTELLA_NEXT_VERSION_FILE_NAME = 'version_to_run_next'
 
 
+class ArtellaSplash(QSplashScreen, object):
+    def __init__(self, pixmap):
+
+        self._offset = 0
+
+        super(ArtellaSplash, self).__init__(pixmap)
+
+    def mousePressEvent(self, event):
+        """
+        Overrides base ArtellaDialog mousePressEvent function
+        :param event: QMouseEvent
+        """
+
+        self._offset = event.pos()
+
+    def mouseMoveEvent(self, event):
+        """
+        Overrides base ArtellaDialog mouseMoveEvent function
+        :param event: QMouseEvent
+        """
+
+        x = event.globalX()
+        y = event.globalY()
+        x_w = self._offset.x()
+        y_w = self._offset.y()
+        self.move(x - x_w, y - y_w)
+
+
 class ArtellaUpdaterException(Exception, object):
     def __init__(self, exc):
         if type(exc) in [str, unicode]:
@@ -57,20 +85,23 @@ class ArtellaUpdaterException(Exception, object):
 
 class ArtellaUpdater(QWidget, object):
     def __init__(
-            self, project_name, app_version, deployment_repository, documentation_url=None,
+            self, app, project_name, app_version, deployment_repository, documentation_url=None,
             deploy_tag=None, install_env_var=None, requirements_file_name=None,
-            force_venv=False, splash_path=None, script_path=None, dev=False,
+            force_venv=False, splash_path=None, script_path=None, dev=False, update_icon=False,
             parent=None):
         super(ArtellaUpdater, self).__init__(parent=parent)
 
         self._config_data = self._read_config()
 
+        if app and update_icon:
+            app.setWindowIcon(QIcon(self._get_resource(self._get_app_config('icon'))))
+
         self._dev = dev
         self._project_name = project_name if project_name else self._get_app_config('name')
-        self._app_version = app_version if app_version else '0.0.0'
+        self._app_version = app_version if app_version else self._get_app_config('version')
         self._repository = deployment_repository if deployment_repository else self._get_app_config('repository')
         self._splash_path = splash_path if splash_path and os.path.isfile(splash_path) else \
-            self._get_app_config('splash')
+            self._get_resource(self._get_app_config('splash'))
         self._force_venv = force_venv
         self._venv_info = dict()
 
@@ -245,6 +276,8 @@ class ArtellaUpdater(QWidget, object):
                 if hasattr(sys, '_MEIPASS'):
                     resource_path = os.path.join(sys._MEIPASS, 'resources', resource_name)
 
+        LOGGER.info("Retrieving resource: {} >>> {}".format(resource_name, resource_path))
+
         return resource_path
 
     def _set_splash_text(self, new_text):
@@ -253,8 +286,7 @@ class ArtellaUpdater(QWidget, object):
 
     def _setup_ui(self):
         splash_pixmap = QPixmap(self._splash_path)
-        self._splash = QSplashScreen(splash_pixmap)
-        self._splash.mousePressEvent = self._splash_mouse_event_override
+        self._splash = ArtellaSplash(splash_pixmap)
         self._splash.setWindowFlags(Qt.FramelessWindowHint)
         splash_layout = QVBoxLayout()
         splash_layout.setContentsMargins(5, 2, 5, 2)
@@ -456,7 +488,7 @@ class ArtellaUpdater(QWidget, object):
         self._refresh_tag_btn.setVisible(False)
 
         self._deploy_tag_combo.currentIndexChanged.connect(self._on_selected_tag)
-        self._close_btn.clicked.connect(QApplication.instance().quit)
+        self._close_btn.clicked.connect(sys.exit)
         self._open_install_folder_btn.clicked.connect(self._on_open_installation_folder)
         self._launch_btn.clicked.connect(self.launch)
         self._reinstall_btn.clicked.connect(self._on_reinstall)
@@ -513,20 +545,21 @@ class ArtellaUpdater(QWidget, object):
             self._show_error('Impossible to setup virtual environment because install path is not defined!')
             return False
 
-        if not hasattr(sys, 'real_prefix'):
+        if self._dev and not hasattr(sys, 'real_prefix'):
             self._show_error('Current Python"{}" is not installed in a virtual environment!'.format(
                 os.path.dirname(sys.executable)))
+            return False
 
         LOGGER.info("Setting Virtual Environment")
         venv_path = self._get_venv_folder_path()
 
         orig_force_env = self._force_venv
         if clean and os.path.isdir(venv_path):
-            self._close_python_processes()
+            self._close_processes()
             self._clean_folder(venv_path)
             self._force_venv = True
         if self._force_venv or not os.path.isdir(venv_path):
-            self._close_python_processes()
+            self._close_processes()
             self._create_venv(force=True)
         self._force_venv = orig_force_env
 
@@ -550,13 +583,14 @@ class ArtellaUpdater(QWidget, object):
 
         return True
 
-    def _close_python_processes(self):
+    def _close_processes(self):
         """
         Internal function that closes all opened Python processes but the current one
         """
 
         for proc in psutil.process_iter():
-            if proc.name().startswith('python') and proc.pid != psutil.Process().pid:
+            if (proc.name().startswith('python') or proc.name().startswith(self._project_name)) \
+                    and proc.pid != psutil.Process().pid:
                 LOGGER.debug('Killing Python process: {}'.format(proc.name()))
                 proc.kill()
 
@@ -673,6 +707,7 @@ class ArtellaUpdater(QWidget, object):
         install_path = self._set_installation_path()
         if not install_path:
             return False
+
         self._version_lbl.setText(str('v{}'.format(self._app_version)))
         self._install_path_lbl.setText(install_path)
         self._install_path_lbl.setToolTip(install_path)
@@ -767,9 +802,6 @@ class ArtellaUpdater(QWidget, object):
             return False
 
         return True
-
-    def _splash_mouse_event_override(self, event):
-        pass
 
     def _set_installation_path(self):
         """
@@ -1816,7 +1848,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--project-name', required=False)
-    parser.add_argument('--version', required=False)
+    parser.add_argument('--version', required=False, default="0.0.0")
     parser.add_argument('--repository', required=False)
     parser.add_argument('--icon-path', required=False, default=None)
     parser.add_argument('--splash-path', required=False, default=None)
@@ -1826,19 +1858,24 @@ if __name__ == '__main__':
 
     with application() as app:
 
-        if args.icon_path:
-            app.setWindowIcon(QIcon(args.icon_path))
+        icon_path = args.icon_path
+        if icon_path and os.path.isfile(icon_path):
+            app.setWindowIcon(QIcon(icon_path))
+        else:
+            icon_path = None
 
         new_app = None
         valid_app = False
         try:
             new_app = ArtellaUpdater(
+                app=app,
                 project_name=args.project_name,
                 app_version=args.version,
                 deployment_repository=args.repository,
                 splash_path=args.splash_path,
                 script_path=args.script_path,
-                dev=args.dev
+                dev=args.dev,
+                update_icon=not bool(icon_path)
             )
             valid_app = True
         except Exception as exc:
