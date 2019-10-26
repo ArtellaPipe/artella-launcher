@@ -1,13 +1,6 @@
 artellapipe.launcher.plugins package
 ====================================
 
-Submodules
-----------
-
-.. toctree::
-
-   artellapipe.launcher.plugins.dccselector
-
 Module contents
 ---------------
 
