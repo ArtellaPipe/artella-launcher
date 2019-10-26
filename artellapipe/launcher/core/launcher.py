@@ -13,17 +13,16 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 import os
-import json
 import logging
+import importlib
 
 from Qt.QtWidgets import *
 
 from tpQtLib.widgets import tabs
 
 from artellapipe.gui import window
-from artellapipe.core import artellalib
+from artellapipe.core import artellalib, config
 from artellapipe.utils import exceptions, resource
-from artellapipe import launcher
 from artellapipe.launcher.core import defines, plugin as core_plugin
 from artellapipe.launcher.widgets import pluginspanel
 
@@ -35,14 +34,12 @@ class ArtellaLauncher(window.ArtellaWindow, object):
     VERSION = '0.0.1'
     LOGO_NAME = 'launcher_logo'
 
-    LAUNCHER_CONFIG_PATH = launcher.get_launcher_config_path()
-    LAUNCHER_PLUGINS_PATHS = list()
-
     def __init__(self, project, install_path, paths_to_register=None, dev=False):
 
         self._logger = None
         self._name = None
         self._version = None
+        self._plugins = None
         self._install_path = install_path
         self._paths_to_register = paths_to_register if paths_to_register else list()
         self._dev = dev
@@ -50,7 +47,12 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         super(ArtellaLauncher, self).__init__(
             project=project,
             name='ArtellaLauncherWindow',
-            title='Artella Launcher'
+            title='Launcher'
+        )
+
+        self._config = config.ArtellaConfiguration(
+            project_name=self._project.get_clean_name(),
+            config_name='artellapipe-launcher'
         )
 
         self.init_config()
@@ -159,7 +161,8 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         Function that initializes Artella launcher
         """
 
-        self._plugin_manager = core_plugin.PluginManager(plugin_paths=self.LAUNCHER_PLUGINS_PATHS)
+        plugin_paths = self._get_plugin_paths()
+        self._plugin_manager = core_plugin.PluginManager(plugin_paths=plugin_paths)
         loaded_plugins = self._plugin_manager.get_plugins()
         if not loaded_plugins:
             LOGGER.warning('No Artella Launcher Plugins found!')
@@ -167,6 +170,37 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         for plugin in loaded_plugins:
             self._add_plugin(plugin)
+
+    def _get_plugin_paths(self):
+
+        plugin_paths = list()
+
+        if not self._plugins:
+            return plugin_paths
+
+        for p in self._plugins:
+            plugin_mod = None
+            try:
+                plugin_mod = importlib.import_module(p)
+            except ImportError:
+                try:
+                    plugin_mod = importlib.import_module(
+                        '{}.launcher.plugins.{}'.format(self._project.get_clean_name(), p))
+                except ImportError:
+                    try:
+                        plugin_mod = importlib.import_module(
+                            'artella.launcher.plugins.{}'.format(self._project.get_clean_name(), p))
+                    except ImportError:
+                        LOGGER.warning('Impossible to load ArtellaPipe Launcher Plugin: {}'.format(p))
+            if not plugin_mod:
+                continue
+
+            if hasattr(plugin_mod, 'init'):
+                plugin_mod.init()
+
+            plugin_paths.append(os.path.dirname(plugin_mod.__file__))
+
+        return plugin_paths
 
     def _add_plugin(self, plugin):
         """
@@ -211,21 +245,9 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         This function can be extended in new launchers
         """
 
-        if not self.LAUNCHER_CONFIG_PATH or not os.path.isfile(self.LAUNCHER_CONFIG_PATH):
-            LOGGER.error(
-                'Launcher Configuration File for Artella Launcher not found! {}'.format(self.LAUNCHER_CONFIG_PATH))
-            return
-
-        with open(self.LAUNCHER_CONFIG_PATH, 'r') as f:
-            launcher_config_data = json.load(f)
-        if not launcher_config_data:
-            LOGGER.error(
-                'Launcher Configuration File for Artella Project is empty! {}'.format(self.LAUNCHER_CONFIG_PATH))
-            return
-
-        self._name = launcher_config_data.get(defines.ARTELLA_CONFIG_LAUNCHER_NAME,
-                                              defines.ARTELLA_DEFAULT_LAUNCHER_NAME)
-        self._version = launcher_config_data.get(defines.ARTELLA_CONFIG_LAUNCHER_VERSION, defines.DEFAULT_VERSION)
+        self._name = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_NAME, defines.ARTELLA_DEFAULT_LAUNCHER_NAME)
+        self._version = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_VERSION, defines.DEFAULT_VERSION)
+        self._plugins = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_PLUGINS, list())
 
     def get_clean_name(self):
         """
@@ -276,8 +298,10 @@ class ArtellaLauncher(window.ArtellaWindow, object):
             artellalib.spigot_client._connected = False
 
 
-def run(project):
-    win = ArtellaLauncher(project=project)
+def run(project, install_path, paths_to_register=None, dev=False):
+    win = ArtellaLauncher(project=project,
+                          install_path=install_path,
+                          paths_to_register=paths_to_register, dev=dev)
     win.show()
 
     return win

@@ -39,7 +39,6 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
 
     def __init__(self, project, launcher=None, parent=None, **kwargs):
 
-        self._config = None
         self._project = project
         self._launcher = launcher
 
@@ -48,7 +47,7 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
         super(ArtellaLauncherPlugin, self).__init__(parent=parent)
 
     def __str__(self):
-        return self._label
+        return self.LABEL
 
     def __repr__(self):
         return '{}.{}({})'.format(self.__name__, type(self).__name__, self.__str__())

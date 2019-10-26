@@ -23,16 +23,16 @@ ARTELLA_LAUNCHER_CONFIG_FILE_NAME = 'launcher.json'
 ARTELLA_UPDATER_CONFIG_FILE_NAME = 'updater.json'
 
 # Defines the name of the attribute that defines the Artella launcher name
-ARTELLA_CONFIG_LAUNCHER_NAME = 'LAUNCHER_NAME'
+ARTELLA_CONFIG_LAUNCHER_NAME = 'name'
 
 # Defines the name of the attribute that defines the Artella launcher version
-ARTELLA_CONFIG_LAUNCHER_VERSION = 'LAUNCHER_VERSION'
+ARTELLA_CONFIG_LAUNCHER_VERSION = 'version'
+
+# Defines the name of the attribute that defines the Artella Plugins section
+ARTELLA_CONFIG_LAUNCHER_PLUGINS = 'plugins'
 
 # Defines the name of the attribute that defines the Artella updater version
 ARTELLA_CONFIG_UPDATER_VERSION = 'UPDATER_VERSION'
-
-# Define the name of the attribute that defines the DCCs list
-LAUNCHER_DCCS_ATTRIBUTE_NAME = "DCCS"
 
 # Defines the name of the attribute that defines environment variables that updater should used
 UPDATER_TOOLS_ENVIRONMENT_VARIABLE_ATTRIBUTE_NAME = "TOOLS_ENVIRONMENT_VARIABLE"
