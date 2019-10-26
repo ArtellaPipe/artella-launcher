@@ -405,7 +405,7 @@ class ArtellaUpdater(QWidget, object):
         deploy_tag_icon.move(5, height)
         height = height + self._deploy_tag_combo.height() / 2 - 5
         self._deploy_tag_combo.move(deploy_tag_icon.width(), height)
-        self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() + 10 , height - 2)
+        self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() + 10, height - 2)
         self._close_btn.move(self._splash.width() - self._close_btn.width() - 5, 0)
 
         self._deploy_tag_combo.setFocusPolicy(Qt.NoFocus)
