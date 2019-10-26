@@ -44,4 +44,5 @@ if __name__ == '__main__':
         from artellapipe.launcher import loader
         loader.init()
         from artellapipe.launcher.core import launcher
-        launcher.run(project=getattr(artellapipe, args.project_name), install_path=args.install_path, paths_to_register=args.paths_to_register, dev=args.dev)
+        launcher.run(project=getattr(artellapipe, args.project_name),
+                     install_path=args.install_path, paths_to_register=args.paths_to_register, dev=args.dev)
