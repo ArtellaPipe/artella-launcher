@@ -13,7 +13,6 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 import os
-import sys
 import inspect
 import logging.config
 
@@ -66,7 +65,6 @@ def init(do_reload=False):
 
     packages_order = []
 
-    update_paths()
     launcher_importer = importer.init_importer(importer_class=ArtellaLauncher, do_reload=False)
     launcher_importer.import_packages(order=packages_order, only_packages=False)
     if do_reload:
@@ -77,17 +75,6 @@ def init(do_reload=False):
     from artellapipe.utils import resource
     resources_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
     resource.ResourceManager().register_resource(resources_path, 'launcher')
-
-
-def update_paths():
-    """
-    Adds to sys.path necessary modules
-    :return:
-    """
-
-    dccs_path = get_dccs_path()
-    if dccs_path and os.path.isdir(dccs_path):
-        sys.path.append(dccs_path)
 
 
 def create_logger_directory():
@@ -123,17 +110,6 @@ def get_logging_level():
     return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', 'DEBUG')
 
 
-def get_dccs_path():
-    """
-    Returns path where DCCs are located
-    :return: str
-    """
-
-    from tpPyUtils import path as path_utils
-
-    return path_utils.clean_path(os.path.join(os.path.dirname(__file__), 'dccs'))
-
-
 def get_artella_launcher_configurations_folder():
     """
     Returns path where artella configurations folder are located
@@ -161,17 +137,3 @@ def get_launcher_config_path():
     cfg_path = get_artella_launcher_configurations_folder()
 
     return path_utils.clean_path(os.path.join(cfg_path, defines.ARTELLA_LAUNCHER_CONFIG_FILE_NAME))
-
-
-def get_updater_config_path():
-    """
-    Returns path where default Artella updater config is located
-    :return: str
-    """
-
-    from tpPyUtils import path as path_utils
-    from artellapipe.launcher.core import defines
-
-    cfg_path = get_artella_launcher_configurations_folder()
-
-    return path_utils.clean_path(os.path.join(cfg_path, defines.ARTELLA_UPDATER_CONFIG_FILE_NAME))
