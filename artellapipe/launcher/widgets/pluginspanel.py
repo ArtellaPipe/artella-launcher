@@ -12,15 +12,11 @@ __license__ = "MIT"
 __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
-import os
-
 from Qt.QtCore import *
 from Qt.QtWidgets import *
 
 from tpQtLib.core import base
 from tpQtLib.widgets import layouts
-
-from artellapipe.utils import resource
 
 
 class PluginButton(base.BaseWidget, object):
@@ -58,26 +54,7 @@ class PluginButton(base.BaseWidget, object):
         self._plugin_btn = QPushButton()
         self._plugin_btn.setFixedSize(QSize(100, 100))
         self._plugin_btn.setIconSize(QSize(110, 110))
-
-        plugin_icon = self._plugin.ICON
-        icon_split = plugin_icon.split('/')
-        if len(icon_split) == 1:
-            theme = 'color'
-        elif len(icon_split) > 1:
-            theme = icon_split[0]
-        else:
-            theme = 'color'
-        icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(self._plugin.ICON), key='project')
-        if not os.path.isfile(icon_path):
-            icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(self._plugin.ICON))
-            if not os.path.isfile(icon_path):
-                plugin_icon = resource.ResourceManager().icon('plugin')
-            else:
-                plugin_icon = resource.ResourceManager().icon(self._plugin.ICON, theme=theme)
-        else:
-            plugin_icon = resource.ResourceManager().icon(self._plugin.ICON, theme=theme, key='project')
-
-        self._plugin_btn.setIcon(plugin_icon)
+        self._plugin_btn.setIcon(self._plugin.get_icon())
         self._plugin_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.main_layout.addWidget(self._plugin_btn)
 

@@ -150,6 +150,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         self._plugins_panel = pluginspanel.PluginsPanel(project=self._project)
         self._plugins_tab.addTab(self._plugins_panel, 'HOME')
+        self._plugins_tab.setTabIcon(0, resource.ResourceManager().icon('home'))
         self._plugins_tab.tabBar().tabButton(0, QTabBar.RightSide).resize(0, 0)
         self._plugins_tab.tabBar().set_is_editable(False)
 
@@ -288,6 +289,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
             plugin_widget = plugin(project=self._project, launcher=self)
             plugin_widget.launched.connect(self._on_launch_plugin)
             self._plugins_tab.addTab(plugin_widget, plugin_widget.LABEL)
+            self._plugins_tab.setTabIcon(self._plugins_tab.count()-1, plugin_widget.get_icon())
             self._plugins_tab.setCurrentWidget(plugin_widget)
         except Exception as e:
             raise exceptions.ArtellaPipeException(self._project, e)

@@ -102,32 +102,3 @@ def get_logging_level():
         return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL')
 
     return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', 'DEBUG')
-
-
-def get_artella_launcher_configurations_folder():
-    """
-    Returns path where artella configurations folder are located
-    :return: str
-    """
-
-    from artellapipe.launcher.core import defines
-
-    if os.environ.get(defines.ARTELLA_LAUNCHER_CONFIGURATION_DEV, None):
-        return os.environ[defines.ARTELLA_LAUNCHER_CONFIGURATION_DEV]
-    else:
-        import artellapipe.config as cfg
-        return cfg.ArtellaConfigs().get_configurations_path()
-
-
-def get_launcher_config_path():
-    """
-    Returns path where default Artella launcher config is located
-    :return: str
-    """
-
-    from tpPyUtils import path as path_utils
-    from artellapipe.launcher.core import defines
-
-    cfg_path = get_artella_launcher_configurations_folder()
-
-    return path_utils.clean_path(os.path.join(cfg_path, defines.ARTELLA_LAUNCHER_CONFIG_FILE_NAME))

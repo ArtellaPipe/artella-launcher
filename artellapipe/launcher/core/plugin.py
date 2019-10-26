@@ -24,6 +24,8 @@ from Qt.QtCore import *
 from tpPyUtils import python, decorators, path as path_utils
 from tpQtLib.core import base
 
+from artellapipe.utils import resource
+
 LOGGER = logging.getLogger()
 
 
@@ -109,6 +111,33 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
         """
 
         pass
+
+    @classmethod
+    def get_icon(cls):
+        """
+        Returns icon resource of the current plugin
+        :return: QIcon
+        """
+
+        plugin_icon = cls.ICON
+        icon_split = plugin_icon.split('/')
+        if len(icon_split) == 1:
+            theme = 'color'
+        elif len(icon_split) > 1:
+            theme = icon_split[0]
+        else:
+            theme = 'color'
+        icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(cls.ICON), key='project')
+        if not icon_path or not os.path.isfile(icon_path):
+            icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(cls.ICON))
+            if not icon_path or os.path.isfile(icon_path):
+                plugin_icon = resource.ResourceManager().icon('plugin')
+            else:
+                plugin_icon = resource.ResourceManager().icon(cls.ICON, theme=theme)
+        else:
+            plugin_icon = resource.ResourceManager().icon(cls.ICON, theme=theme, key='project')
+
+        return plugin_icon
 
 
 class PluginManager(object):

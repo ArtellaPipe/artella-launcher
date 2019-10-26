@@ -2,4 +2,3 @@ include artellapipe/launcher/__logging__.ini
 include artellapipe/launcher/resources/icons/*.*
 include artellapipe/launcher/resources/icons/color/*.*
 include artellapipe/launcher/resources/images/*.*
-include artellapipe/launcher/*.json

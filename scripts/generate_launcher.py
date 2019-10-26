@@ -23,7 +23,7 @@ import subprocess
 
 class LauncherGenerator(object):
     def __init__(self, project_name, repository, app_path, clean_env, clean_env_after, update_requirements,
-                 icon_path, splash_path, windowed, one_file, dev):
+                 icon_path, splash_path, install_path, windowed, one_file, dev):
 
         self._project_name = project_name
         self._repository = repository
@@ -37,11 +37,15 @@ class LauncherGenerator(object):
         self._icon_path = icon_path if icon_path and os.path.isfile(icon_path) else self._get_default_icon_path()
         self._splash_path = splash_path if splash_path and os.path.isfile(
             splash_path) else self._get_default_splash_path()
+        self._install_path = install_path if install_path and os.path.isdir(install_path) else os.path.dirname(
+            os.path.abspath(__file__))
         self._folder_name = os.path.splitext(os.path.basename(self._app_path))[0]
         self._exe_name = '{}.exe'.format(self._folder_name)
         self._spec_name = '{}.spec'.format(self._folder_name)
-        self._dist_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dist')
-        self._build_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'build')
+        self._dist_folder = os.path.join(self._install_path, 'dist')
+        self._build_folder = os.path.join(self._install_path, 'build')
+
+        os.chdir(self._install_path)
 
         self._cleanup()
 
@@ -84,15 +88,14 @@ class LauncherGenerator(object):
             process.wait()
             print('>>> virtualenv installed successfully!')
 
-        root_path = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        venv_folder = os.path.join(root_path, self._get_venv_name())
+        venv_folder = os.path.join(self._install_path, self._get_venv_name())
 
         if self._clean_env:
             if os.path.isdir(venv_folder):
                 print('> Removing {} folder ...'.format(venv_folder))
                 shutil.rmtree(venv_folder)
 
-        venv_scripts = os.path.join(root_path, self._get_venv_name(), 'Scripts')
+        venv_scripts = os.path.join(self._install_path, self._get_venv_name(), 'Scripts')
         venv_python = os.path.join(venv_scripts, 'python.exe')
         if not os.path.isfile(venv_python):
             venv_cmd = 'virtualenv -p "{}" {}'.format(sys.executable, self._get_venv_name())
@@ -100,7 +103,7 @@ class LauncherGenerator(object):
             process.wait()
 
         venv_info = {
-            'root_path': root_path,
+            'root_path': self._install_path,
             'venv_folder': venv_folder,
             'venv_scripts': venv_scripts,
             'venv_python': venv_python
@@ -114,7 +117,7 @@ class LauncherGenerator(object):
         :param venv_info: dict
         """
 
-        root_path = venv_info['root_path']
+        root_path = os.path.dirname(os.path.abspath(__file__))
         venv_scripts = venv_info['venv_scripts']
 
         print('> Installing requirements ...')
@@ -143,7 +146,7 @@ class LauncherGenerator(object):
                     requirements_file, e, traceback.format_exc()))
 
     def _get_config_path(self):
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+        return os.path.join(self._install_path, 'config.json')
 
     def _get_launcher_script_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'launcher.py')
@@ -161,10 +164,10 @@ class LauncherGenerator(object):
         return os.path.join(self._get_resources_path(), 'splash.png')
 
     def _cleanup(self):
-        exe_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '{}.exe'.format(self._project_name))
-        spec_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self._spec_name)
-        folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self._project_name)
-        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+        exe_path = os.path.join(self._install_path, '{}.exe'.format(self._project_name))
+        spec_path = os.path.join(self._install_path, self._spec_name)
+        folder_path = os.path.join(self._install_path, self._project_name)
+        config_file = os.path.join(self._install_path, 'config.json')
         if os.path.isfile(spec_path):
             os.remove(spec_path)
         if os.path.isfile(config_file):
@@ -176,15 +179,14 @@ class LauncherGenerator(object):
 
         exe_path = os.path.join(self._dist_folder, self._exe_name)
         if os.path.isfile(exe_path):
-            shutil.move(exe_path, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                               '{}.exe'.format(self._project_name)))
+            shutil.move(exe_path, os.path.join(self._install_path, '{}.exe'.format(self._project_name)))
         else:
             folder_path = os.path.join(self._dist_folder, self._folder_name)
             if os.path.isdir(folder_path):
                 exe_path = os.path.join(folder_path, self._exe_name)
                 if os.path.isfile(exe_path):
                     os.rename(exe_path, os.path.join(folder_path, '{}.exe'.format(self._project_name)))
-                shutil.move(folder_path, os.path.join(os.path.dirname(os.path.abspath(__file__)), self._project_name))
+                shutil.move(folder_path, os.path.join(self._install_path, self._project_name))
         if os.path.isdir(self._dist_folder):
             shutil.rmtree(self._dist_folder)
         if os.path.isdir(self._build_folder):
@@ -200,59 +202,6 @@ class LauncherGenerator(object):
         config_path = self._get_config_path()
         with open(config_path, 'w') as config_file:
             json.dump(config_data, config_file)
-
-    def _generate_launcher_script(self):
-        """
-        Internal function that creates the output file used to generate launcher app
-        :return: str
-        """
-
-        launcher_script = """#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
-
-__author__ = "Tomas Poveda"
-__license__ = "MIT"
-__maintainer__ = "Tomas Poveda"
-__email__ = "tpovedatd@gmail.com"
-
-import sys
-import argparse
-import contextlib
-
-from Qt.QtWidgets import QApplication
-
-@contextlib.contextmanager
-def application():
-    app = QApplication.instance()
-
-    if not app:
-        app = QApplication(sys.argv)
-        yield app
-        app.exec_()
-    else:
-        yield app
-
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Generate Python Virtual Environment to generate launcher')
-    parser.add_argument('--install-path', required=True)
-    args = parser.parse_args()
-
-    with application() as app:
-        from {0} import launcher
-        launcher.init()
-        from {0}.launcher import launcher
-        launcher.run(install_path=args.install_path)
-""".format(self._get_clean_name())
-
-        script_path = self._get_launcher_script_path()
-        with open(script_path, 'w') as script_file:
-            script_file.write(launcher_script)
-
-        return script_path
 
     def _generate_spec_file(self, venv_info):
         python_exe = venv_info['venv_python']
@@ -285,7 +234,7 @@ if __name__ == '__main__':
         except Exception as e:
             raise RuntimeError('Error while generate Launcher Spec file | {} - {}'.format(e, traceback.format_exc()))
 
-        spec_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), spec_name)
+        spec_file = os.path.join(self._install_path, spec_name)
         if not os.path.isfile(spec_file):
             raise RuntimeError(
                 'Launcher Spec file does not exists. Please execute generate_launcher using --generate-spec argument'
@@ -327,7 +276,6 @@ if __name__ == '__main__':
         python_exe = venv_info['venv_python']
 
         self._generate_config_file()
-        self._generate_launcher_script()
         specs_file_name = self._generate_spec_file(venv_info)
 
         pyinstaller_exe = os.path.join(os.path.dirname(python_exe), 'pyinstaller.exe')
@@ -372,6 +320,9 @@ if __name__ == '__main__':
         '--splash-path', required=False, default=None,
         help='Path where splash image is located')
     parser.add_argument(
+        '--install-path', required=False, default=None,
+        help='Path where launcher will be generated')
+    parser.add_argument(
         '--update-requirements',
         required=False, default=True, action='store_true',
         help='Whether update venv requirements')
@@ -398,6 +349,7 @@ if __name__ == '__main__':
         update_requirements=args.update_requirements,
         icon_path=args.icon_path,
         splash_path=args.splash_path,
+        install_path=args.install_path,
         windowed=args.windowed,
         one_file=args.onefile,
         dev=args.dev

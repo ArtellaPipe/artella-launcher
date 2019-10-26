@@ -155,7 +155,7 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = subprocess.Popen(['python', '-c', 'quit()'])
+        process = self._run_subprocess(commands_list=['python', '-c', 'quit()'])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -166,7 +166,7 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = subprocess.Popen(['pip', '-V'])
+        process = self._run_subprocess(commands_list=['pip', '-V'])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -177,7 +177,7 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = subprocess.Popen(['virtualenv', '--version'])
+        process = self._run_subprocess(commands_list=['virtualenv', '--version'])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -331,18 +331,36 @@ class ArtellaUpdater(QWidget, object):
         self._open_install_folder_btn.setFixedHeight(30)
         self._open_install_folder_btn.setIconSize(QSize(25, 25))
         self._open_install_folder_btn.setIcon(QPixmap(self._get_resource('search_folder.png')))
+        self._reinstall_btn = QPushButton('Reinstall')
+        self._reinstall_btn.setStyleSheet(buttons_style)
+        self._reinstall_btn.setFixedWidth(75)
+        self._reinstall_btn.setFixedHeight(30)
+        self._reinstall_btn.setIconSize(QSize(15, 15))
+        self._reinstall_btn.setIcon(QPixmap(self._get_resource('reinstall.png')))
         self._uninstall_btn = QPushButton('Uninstall')
         self._uninstall_btn.setStyleSheet(buttons_style)
-        self._uninstall_btn.setFixedWidth(150)
+        self._uninstall_btn.setFixedWidth(75)
         self._uninstall_btn.setFixedHeight(30)
-        self._uninstall_btn.setIconSize(QSize(30, 30))
+        self._uninstall_btn.setIconSize(QSize(20, 20))
         self._uninstall_btn.setIcon(QPixmap(self._get_resource('uninstall.png')))
+        uninstall_reinstall_layout = QHBoxLayout()
+        uninstall_reinstall_layout.setSpacing(2)
+        uninstall_reinstall_layout.setContentsMargins(2, 2, 2, 2)
+        uninstall_reinstall_layout.addWidget(self._reinstall_btn)
+        uninstall_reinstall_layout.addWidget(self._uninstall_btn)
         self._buttons_layout = QVBoxLayout()
         self._buttons_layout.setContentsMargins(5, 5, 5, 5)
         self._buttons_layout.setSpacing(2)
         self._buttons_layout.addWidget(self._launch_btn)
         self._buttons_layout.addWidget(self._open_install_folder_btn)
-        self._buttons_layout.addWidget(self._uninstall_btn)
+        self._buttons_layout.addLayout(uninstall_reinstall_layout)
+        self._refresh_tag_btn = QPushButton()
+        self._refresh_tag_btn.setFlat(True)
+        self._refresh_tag_btn.setFixedSize(QSize(25, 25))
+        self._refresh_tag_btn.setIconSize(QSize(20, 20))
+        refresh_icon = QIcon()
+        refresh_icon.addPixmap(QPixmap(self._get_resource('refresh.png')).scaled(QSize(30, 30)))
+        self._refresh_tag_btn.setIcon(refresh_icon)
 
         self._progress_text = QLabel('Setting {} ...'.format(self._project_name.title()))
         self._progress_text.setAlignment(Qt.AlignCenter)
@@ -368,6 +386,7 @@ class ArtellaUpdater(QWidget, object):
         self._install_path_lbl.setParent(self._splash)
         deploy_tag_icon.setParent(self._splash)
         self._deploy_tag_combo.setParent(self._splash)
+        self._refresh_tag_btn.setParent(self._splash)
 
         self._artella_status_icon.setFixedSize(QSize(45, 45))
         self._version_lbl.setFixedSize(50, 20)
@@ -378,7 +397,6 @@ class ArtellaUpdater(QWidget, object):
 
         height = 5
         self._version_lbl.move(10, self._splash.height() - 48)
-        # height += self._version_lbl.height()
         self._artella_status_icon.move(5, height)
         height += self._artella_status_icon.height() - 5
         install_path_icon.move(5, height)
@@ -387,6 +405,7 @@ class ArtellaUpdater(QWidget, object):
         deploy_tag_icon.move(5, height)
         height = height + self._deploy_tag_combo.height() / 2 - 5
         self._deploy_tag_combo.move(deploy_tag_icon.width(), height)
+        self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() + 10 , height - 2)
         self._close_btn.move(self._splash.width() - self._close_btn.width() - 5, 0)
 
         self._deploy_tag_combo.setFocusPolicy(Qt.NoFocus)
@@ -394,7 +413,6 @@ class ArtellaUpdater(QWidget, object):
         combo_width = 5
         if self._dev:
             self._deploy_tag_combo.setEnabled(False)
-            # self._deploy_tag_combo.setFixedSize(QSize(30, 20))
             combo_width = 0
 
         self._deploy_tag_combo.setStyleSheet("""
@@ -419,49 +437,19 @@ class ArtellaUpdater(QWidget, object):
         self._launch_btn.setVisible(False)
         self._open_install_folder_btn.setVisible(False)
         self._uninstall_btn.setVisible(False)
+        self._reinstall_btn.setVisible(False)
+        self._refresh_tag_btn.setVisible(False)
 
         self._deploy_tag_combo.currentIndexChanged.connect(self._on_selected_tag)
         self._close_btn.clicked.connect(QApplication.instance().quit)
         self._open_install_folder_btn.clicked.connect(self._on_open_installation_folder)
         self._launch_btn.clicked.connect(self.launch)
+        self._reinstall_btn.clicked.connect(self._on_reinstall)
         self._uninstall_btn.clicked.connect(self._on_uninstall)
+        self._refresh_tag_btn.clicked.connect(self._on_refresh_tag)
 
         self._splash.show()
         self._splash.raise_()
-
-    def _on_selected_tag(self, new_index):
-        new_tag = self._deploy_tag_combo.itemText(new_index)
-        if not new_tag:
-            LOGGER.error('New Tag "{}" is not valid!'.format(new_tag))
-            return
-
-        res = QMessageBox.question(
-            self._splash, 'Installing tag version: "{}"'.format(new_tag),
-            'Are you sure you want to install this version: "{}"?'.format(new_tag),
-            QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
-        if res == QMessageBox.Yes:
-            LOGGER.info("Installing tag version: {}".format(new_tag))
-            self._deploy_tag = new_tag
-            self._selected_tag_index = new_index
-            self._set_config('tag', new_tag)
-            self._load()
-        else:
-            try:
-                self._deploy_tag_combo.blockSignals(True)
-                self._deploy_tag_combo.setCurrentIndex(self._selected_tag_index)
-            finally:
-                self._deploy_tag_combo.blockSignals(False)
-
-    def _on_open_installation_folder(self):
-        """
-        Internal callback function that is called when the user press Open Installation Folder button
-        """
-
-        install_path = self._get_installation_path()
-        if install_path and os.path.isdir(install_path) and len(os.listdir(install_path)) != 0:
-            self._open_folder(install_path)
-        else:
-            LOGGER.warning('{} environment not installed!'.format(self._project_name))
 
     def _open_folder(self, path=None):
         """
@@ -473,55 +461,37 @@ class ArtellaUpdater(QWidget, object):
         if path is None:
             path = os.path.curdir
         if sys.platform == 'darwin':
-            subprocess.check_call(['open', '--', path])
+            self._check_call(commands_list=['open', '--', path])
         elif sys.platform == 'linux2':
-            subprocess.Popen(['xdg-open', path])
+            self._run_subprocess(commands_list=['xdg-open', path])
         elif sys.platform is 'windows' or 'win32' or 'win64':
             new_path = path.replace('/', '\\')
             try:
-                subprocess.check_call(['explorer', new_path], shell=False)
+                self._check_call(commands_list=['explorer', new_path], shell=False)
             except Exception:
                 pass
 
-    def _on_uninstall(self):
+    def _clean_folder(self, folder):
         """
-        Internal callback function that is called when the user press Uninstall button
-        Removes environment variable and Tools folder
-        :return:
+        Internal function that removes all the contents in the given folder
+        :param folder: str
         """
 
-        question_flags = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        if not folder or not os.path.isdir(folder):
+            LOGGER.warning('Impossible to remove "{}"'.format(folder))
+            return
 
-        install_path = self._get_installation_path()
-        if install_path and os.path.isdir(install_path):
-            dirs_to_remove = [os.path.join(install_path, self.get_clean_name())]
-            res = QMessageBox.question(
-                self._splash, 'Uninstalling {} Tools'.format(self._project_name),
-                'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
-                    self._project_name, '\n\t'.join(dirs_to_remove)), question_flags)
-            if res == QMessageBox.Yes:
-                try:
-                    for d in dirs_to_remove:
-                        if os.path.isdir(d):
-                            shutil.rmtree(d, ignore_errors=True)
-                        elif os.path.isfile(d):
-                            os.remove(d)
-                    self._set_config(self._install_env_var, '')
-                    QMessageBox.information(
-                        self._splash, '{} Tools uninstalled'.format(self._project_name),
-                        '{} Tools uninstalled successfully! App will be closed now!'.format(self._project_name))
-                    QApplication.instance().quit()
-                except Exception as e:
-                    self._set_config(self._install_env_var, '')
-                    QMessageBox.critical(
-                        self._splash, 'Error during {} Tools uninstall process'.format(self._project_name),
-                        'Error during {} Tools uninstall: {} | {}\n\n'
-                        'You will need to remove following folders manually:\n\n{}'.format(
-                            self._project_name, e, traceback.format_exc(), '\n\t'.join(dirs_to_remove)))
-        else:
-            LOGGER.warning('{} tools are not installed! Launch any DCC first!'.format(self._project_name))
+        for the_file in os.listdir(folder):
+            file_path = os.path.join(folder, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(e)
 
-    def _setup_environment(self):
+    def _setup_environment(self, clean=False):
 
         if not self._install_path:
             LOGGER.error('Impossible to setup virtual environment because install path is not defined!')
@@ -533,8 +503,14 @@ class ArtellaUpdater(QWidget, object):
 
         LOGGER.info("Setting Virtual Environment")
         venv_path = self._get_venv_folder_path()
+
+        orig_force_env = self._force_venv
+        if clean and os.path.isdir(venv_path):
+            self._clean_folder(venv_path)
+            self._force_venv = True
         if self._force_venv or not os.path.isdir(venv_path):
             self._create_venv(force=True)
+        self._force_venv = orig_force_env
 
         root_path = os.path.dirname(venv_path)
         venv_scripts = os.path.join(venv_path, 'Scripts')
@@ -624,7 +600,7 @@ class ArtellaUpdater(QWidget, object):
         if not self.is_virtualenv_installed():
             LOGGER.warning('No virtualenv Installation found!')
             LOGGER.info('Installing virtualenv ...')
-            process = subprocess.Popen(['pip', 'install', 'virtualenv'])
+            process = self._run_subprocess(commands_list=['pip', 'install', 'virtualenv'])
             process.wait()
             if not self.is_virtualenv_installed():
                 LOGGER.error('Impossible to install virtualenv using pip.')
@@ -657,7 +633,7 @@ class ArtellaUpdater(QWidget, object):
                 self._selected_tag_index = self._deploy_tag_combo.currentIndex()
             self._deploy_tag_combo.blockSignals(False)
 
-    def _load(self):
+    def _load(self, clean=False):
         """
         Internal function that initializes Artella App
         """
@@ -675,7 +651,7 @@ class ArtellaUpdater(QWidget, object):
 
         self._init_tags_combo()
 
-        valid_venv = self._setup_environment()
+        valid_venv = self._setup_environment(clean=clean)
         if not valid_venv:
             return False
         if not self._venv_info:
@@ -708,7 +684,9 @@ class ArtellaUpdater(QWidget, object):
             self._launch_btn.setVisible(True)
             if not self._dev:
                 self._open_install_folder_btn.setVisible(True)
+                self._reinstall_btn.setVisible(True)
                 self._uninstall_btn.setVisible(True)
+                self._refresh_tag_btn.setVisible(True)
         else:
             QMessageBox.warning(
                 self,
@@ -740,7 +718,7 @@ class ArtellaUpdater(QWidget, object):
             self.get_clean_name(), self._install_path, '"{0}"'.format(' '.join(paths_to_register)))
         if self._dev:
             process_cmd += ' --dev'
-        process = subprocess.Popen(process_cmd, close_fds=True)
+        process = self._run_subprocess(command=process_cmd, close_fds=True)
 
         self._splash.close()
 
@@ -785,8 +763,19 @@ class ArtellaUpdater(QWidget, object):
                         break
         if old_installation:
             LOGGER.info("Old installation found. Removing ...")
+            self._set_config(self.install_env_var, '')
             self._set_splash_text('Removing old installation ...')
-            shutil.rmtree(install_path)
+            res = QMessageBox.question(
+                self._splash, 'Old installation found',
+                'All the contents in the following folder wil be removed: \n\t{}\n\nDo you want to continue?'.format(
+                    install_path), QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+            if res == QMessageBox.Yes:
+                shutil.rmtree(install_path)
+            QMessageBox.information(
+                self._splash,
+                'Relaunch the tool',
+                'Next time you launch the tool you will need to select a new installation path')
+            return False
 
         if not install_path or not os.path.isdir(install_path):
             self._set_splash_text('Select {} installation folder ...'.format(self._project_name))
@@ -795,7 +784,7 @@ class ArtellaUpdater(QWidget, object):
             if not install_path:
                 LOGGER.info('Installation cancelled by user')
                 QMessageBox.information(
-                    self,
+                    self._splash,
                     'Installation cancelled',
                     'Installation cancelled by user')
                 return False
@@ -1200,7 +1189,7 @@ class ArtellaUpdater(QWidget, object):
             shutil.rmtree(venv_path)
 
         self._set_splash_text('Creating Virtual Environment: "{}"'.format(venv_path))
-        process = subprocess.Popen(['virtualenv', venv_path])
+        process = self._run_subprocess(commands_list=['virtualenv', venv_path])
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -1227,7 +1216,11 @@ class ArtellaUpdater(QWidget, object):
 
         paths_to_register = [self._get_installation_path()]
 
-        lib_site_folder = os.path.join(self._install_path, 'Lib', 'site-packages')
+        if self._dev:
+            lib_site_folder = os.path.join(self._install_path, 'Lib', 'site-packages')
+        else:
+            lib_site_folder = os.path.join(self._install_path, self.get_clean_name(), 'Lib', 'site-packages')
+
         if os.path.isdir(lib_site_folder):
             paths_to_register.append(lib_site_folder)
 
@@ -1327,14 +1320,14 @@ class ArtellaUpdater(QWidget, object):
             )
             return False
 
-        self._set_splash_text('Installing {} Requirements ...'.format(self._project_name))
+        self._set_splash_text('Installing {} Requirements. Please wait ...'.format(self._project_name))
         LOGGER.info('Installing Deployment Requirements with PIP: {}'.format(pip_exe))
 
-        pip_cmd = '"{}" install --upgrade -r "{}"'.format(pip_exe, self._requirements_path)
+        pip_cmd = '"{}" install --upgrade --no-cache -r "{}"'.format(pip_exe, self._requirements_path)
         LOGGER.info('Launching pip command: {}'.format(pip_cmd))
 
         try:
-            process = subprocess.Popen(pip_cmd)
+            process = self._run_subprocess(command=pip_cmd)
             process.wait()
         except Exception as exc:
             raise Exception(exc)
@@ -1359,6 +1352,10 @@ class ArtellaUpdater(QWidget, object):
         return True
 
     def _setup_artella(self):
+        """
+        Internal function that initializes Artella
+        """
+
         self._set_splash_text('Updating Artella Paths ...')
         self._update_artella_paths()
         self._set_splash_text('Closing Artella App instances ...')
@@ -1628,6 +1625,134 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.info('Launching Artella App ...')
             LOGGER.debug('Artella App File: {0}'.format(artella_app_file))
             os.startfile(artella_app_file.replace('\\', '//'))
+
+    def _on_refresh_tag(self):
+        """
+        Internal callback function that is called when tag refresh button is clicked by user
+        Forces requirements to be in current deployment version
+        """
+
+        self._load(clean=False)
+
+    def _on_selected_tag(self, new_index):
+        """
+        Internal callback function that is called when a new tag is selectged in tags combo box
+        :param new_index: int
+        """
+
+        new_tag = self._deploy_tag_combo.itemText(new_index)
+        if not new_tag:
+            LOGGER.error('New Tag "{}" is not valid!'.format(new_tag))
+            return
+
+        res = QMessageBox.question(
+            self._splash, 'Installing tag version: "{}"'.format(new_tag),
+            'Are you sure you want to install this version: "{}"?'.format(new_tag),
+            QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+        if res == QMessageBox.Yes:
+            LOGGER.info("Installing tag version: {}".format(new_tag))
+            self._deploy_tag = new_tag
+            self._selected_tag_index = new_index
+            self._set_config('tag', new_tag)
+            self._load(clean=True)
+        else:
+            try:
+                self._deploy_tag_combo.blockSignals(True)
+                self._deploy_tag_combo.setCurrentIndex(self._selected_tag_index)
+            finally:
+                self._deploy_tag_combo.blockSignals(False)
+
+    def _on_open_installation_folder(self):
+        """
+        Internal callback function that is called when the user press Open Installation Folder button
+        """
+
+        install_path = self._get_installation_path()
+        if install_path and os.path.isdir(install_path) and len(os.listdir(install_path)) != 0:
+            self._open_folder(install_path)
+        else:
+            LOGGER.warning('{} environment not installed!'.format(self._project_name))
+
+    def _on_reinstall(self):
+        """
+        Internal callback function that is called when reinstall button is clicked by user
+        Removes the current virtual environment setup and creates a new one
+        """
+
+        question_flags = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        res = QMessageBox.question(
+            self._splash, 'Reinstalling {} Tools'.format(self.get_clean_name()),
+            'Are you sure you want to reinstall {} Tools?'.format(self._project_name), question_flags)
+        if res == QMessageBox.Yes:
+            self._load(clean=True)
+
+    def _on_uninstall(self):
+        """
+        Internal callback function that is called when the user press Uninstall button
+        Removes environment variable and Tools folder
+        :return:
+        """
+
+        question_flags = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+
+        install_path = self._get_installation_path()
+        if install_path and os.path.isdir(install_path):
+            dirs_to_remove = [os.path.join(install_path, self.get_clean_name())]
+            res = QMessageBox.question(
+                self._splash, 'Uninstalling {} Tools'.format(self._project_name),
+                'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
+                    self._project_name, '\n\t'.join(dirs_to_remove)), question_flags)
+            if res == QMessageBox.Yes:
+                try:
+                    for d in dirs_to_remove:
+                        if os.path.isdir(d):
+                            shutil.rmtree(d, ignore_errors=True)
+                        elif os.path.isfile(d):
+                            os.remove(d)
+                    self._set_config(self._install_env_var, '')
+                    QMessageBox.information(
+                        self._splash, '{} Tools uninstalled'.format(self._project_name),
+                        '{} Tools uninstalled successfully! App will be closed now!'.format(self._project_name))
+                    QApplication.instance().quit()
+                except Exception as e:
+                    self._set_config(self._install_env_var, '')
+                    QMessageBox.critical(
+                        self._splash, 'Error during {} Tools uninstall process'.format(self._project_name),
+                        'Error during {} Tools uninstall: {} | {}\n\n'
+                        'You will need to remove following folders manually:\n\n{}'.format(
+                            self._project_name, e, traceback.format_exc(), '\n\t'.join(dirs_to_remove)))
+        else:
+            LOGGER.warning('{} tools are not installed! Launch any DCC first!'.format(self._project_name))
+
+    def _run_subprocess(self, command=None, commands_list=None, close_fds=False, hide_console=True):
+
+        if not commands_list:
+            commands_list = list()
+
+        creation_flags = 0
+        if hide_console:
+            creation_flags = 0x08000000
+
+        if command:
+            process = subprocess.Popen(command, close_fds=close_fds, creationflags=creation_flags)
+        elif commands_list:
+            process = subprocess.Popen(commands_list, close_fds=close_fds, creationflags=creation_flags)
+        else:
+            LOGGER.error(
+                "Impossible to launch subprocess: command={}, commands_list={}, close_fds={}, hide_console={}".format(
+                    command, commands_list, close_fds, hide_console))
+            return None
+
+        return process
+
+    def _check_call(self, commands_list, shell=True):
+        if not commands_list:
+            LOGGER.error("Impossible to launch subprocess: commands_list={}".format(commands_list))
+            return None
+
+        process = subprocess.check_call(commands_list, shell=shell)
+
+        return process
 
 
 @contextlib.contextmanager
