@@ -112,7 +112,6 @@ class LauncherGenerator(object):
 
         return copied_resources
 
-
     def _clean_resources(self, resources_to_clean):
         """
         Internal function that deletes all the given resource paths

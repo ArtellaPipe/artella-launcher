@@ -450,8 +450,9 @@ class ArtellaUpdater(QWidget, object):
         if not self._dev:
             self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() + 10, height - 2)
         else:
-            self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() +
-                                    self._info_tag_btn.width() + 10, height - 2)
+            self._refresh_tag_btn.move(
+                self._deploy_tag_combo.width() + self._refresh_tag_btn.width() + self._info_tag_btn.width() + 10,
+                height - 2)
         self._close_btn.move(self._splash.width() - self._close_btn.width() - 5, 0)
 
         self._deploy_tag_combo.setFocusPolicy(Qt.NoFocus)
@@ -1364,7 +1365,8 @@ class ArtellaUpdater(QWidget, object):
 
     def _install_deployment_requirements(self):
         if not self._venv_info:
-            self._show_error('Impossible to install Deployment Requirements because Virtual Environment is not configured!')
+            self._show_error(
+                'Impossible to install Deployment Requirements because Virtual Environment is not configured!')
             return False
 
         if not self._requirements_path or not os.path.isfile(self._requirements_path):
