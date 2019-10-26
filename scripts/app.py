@@ -1393,6 +1393,9 @@ class ArtellaUpdater(QWidget, object):
         try:
             process = self._run_subprocess(command=pip_cmd)
             process.wait()
+            # We retry twice because sometimes pip fails when trying to install new packages
+            process = self._run_subprocess(command=pip_cmd)
+            process.wait()
         except Exception as exc:
             raise Exception(exc)
 

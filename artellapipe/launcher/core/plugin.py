@@ -130,7 +130,7 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
         icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(cls.ICON), key='project')
         if not icon_path or not os.path.isfile(icon_path):
             icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(cls.ICON))
-            if not icon_path or os.path.isfile(icon_path):
+            if not icon_path or not os.path.isfile(icon_path):
                 plugin_icon = resource.ResourceManager().icon('plugin')
             else:
                 plugin_icon = resource.ResourceManager().icon(cls.ICON, theme=theme)
