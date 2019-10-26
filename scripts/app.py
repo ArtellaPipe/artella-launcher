@@ -3,6 +3,7 @@ import re
 import sys
 import time
 import json
+import psutil
 import shutil
 import appdirs
 import logging
@@ -354,12 +355,19 @@ class ArtellaUpdater(QWidget, object):
         self._buttons_layout.addWidget(self._launch_btn)
         self._buttons_layout.addWidget(self._open_install_folder_btn)
         self._buttons_layout.addLayout(uninstall_reinstall_layout)
+        self._info_tag_btn = QPushButton()
+        self._info_tag_btn.setFlat(True)
+        self._info_tag_btn.setFixedSize(QSize(25, 25))
+        self._info_tag_btn.setIconSize(QSize(18, 18))
+        info_icon = QIcon()
+        info_icon.addPixmap(QPixmap(self._get_resource('info.png')).scaled(QSize(25, 25)))
+        self._info_tag_btn.setIcon(info_icon)
         self._refresh_tag_btn = QPushButton()
         self._refresh_tag_btn.setFlat(True)
         self._refresh_tag_btn.setFixedSize(QSize(25, 25))
-        self._refresh_tag_btn.setIconSize(QSize(20, 20))
+        self._refresh_tag_btn.setIconSize(QSize(18, 18))
         refresh_icon = QIcon()
-        refresh_icon.addPixmap(QPixmap(self._get_resource('refresh.png')).scaled(QSize(30, 30)))
+        refresh_icon.addPixmap(QPixmap(self._get_resource('refresh.png')).scaled(QSize(25, 25)))
         self._refresh_tag_btn.setIcon(refresh_icon)
 
         self._progress_text = QLabel('Setting {} ...'.format(self._project_name.title()))
@@ -386,6 +394,7 @@ class ArtellaUpdater(QWidget, object):
         self._install_path_lbl.setParent(self._splash)
         deploy_tag_icon.setParent(self._splash)
         self._deploy_tag_combo.setParent(self._splash)
+        self._info_tag_btn.setParent(self._splash)
         self._refresh_tag_btn.setParent(self._splash)
 
         self._artella_status_icon.setFixedSize(QSize(45, 45))
@@ -405,7 +414,12 @@ class ArtellaUpdater(QWidget, object):
         deploy_tag_icon.move(5, height)
         height = height + self._deploy_tag_combo.height() / 2 - 5
         self._deploy_tag_combo.move(deploy_tag_icon.width(), height)
-        self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() + 10, height - 2)
+        self._info_tag_btn.move(self._deploy_tag_combo.width() + self._info_tag_btn.width() + 10, height - 2)
+        if not self._dev:
+            self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() + 10, height - 2)
+        else:
+            self._refresh_tag_btn.move(self._deploy_tag_combo.width() + self._refresh_tag_btn.width() +
+                                    self._info_tag_btn.width() + 10, height - 2)
         self._close_btn.move(self._splash.width() - self._close_btn.width() - 5, 0)
 
         self._deploy_tag_combo.setFocusPolicy(Qt.NoFocus)
@@ -438,6 +452,7 @@ class ArtellaUpdater(QWidget, object):
         self._open_install_folder_btn.setVisible(False)
         self._uninstall_btn.setVisible(False)
         self._reinstall_btn.setVisible(False)
+        self._info_tag_btn.setVisible(False)
         self._refresh_tag_btn.setVisible(False)
 
         self._deploy_tag_combo.currentIndexChanged.connect(self._on_selected_tag)
@@ -446,6 +461,7 @@ class ArtellaUpdater(QWidget, object):
         self._launch_btn.clicked.connect(self.launch)
         self._reinstall_btn.clicked.connect(self._on_reinstall)
         self._uninstall_btn.clicked.connect(self._on_uninstall)
+        self._info_tag_btn.clicked.connect(self._on_open_tag_info)
         self._refresh_tag_btn.clicked.connect(self._on_refresh_tag)
 
         self._splash.show()
@@ -491,14 +507,20 @@ class ArtellaUpdater(QWidget, object):
             except Exception as e:
                 print(e)
 
+    def _close_python_processes(self):
+        for proc in psutil.process_iter():
+            if proc.name() == 'python':
+                LOGGER.debug('Killing Python process: {}'.format(proc.name()))
+                proc.kill()
+
     def _setup_environment(self, clean=False):
 
         if not self._install_path:
-            LOGGER.error('Impossible to setup virtual environment because install path is not defined!')
+            self._show_error('Impossible to setup virtual environment because install path is not defined!')
             return False
 
         if not hasattr(sys, 'real_prefix'):
-            LOGGER.error('Current Python"{}" is not installed in a virtual environment!'.format(
+            self._show_error('Current Python"{}" is not installed in a virtual environment!'.format(
                 os.path.dirname(sys.executable)))
 
         LOGGER.info("Setting Virtual Environment")
@@ -506,6 +528,7 @@ class ArtellaUpdater(QWidget, object):
 
         orig_force_env = self._force_venv
         if clean and os.path.isdir(venv_path):
+            self._close_python_processes()
             self._clean_folder(venv_path)
             self._force_venv = True
         if self._force_venv or not os.path.isdir(venv_path):
@@ -603,7 +626,7 @@ class ArtellaUpdater(QWidget, object):
             process = self._run_subprocess(commands_list=['pip', 'install', 'virtualenv'])
             process.wait()
             if not self.is_virtualenv_installed():
-                LOGGER.error('Impossible to install virtualenv using pip.')
+                LOGGER.warning('Impossible to install virtualenv using pip.')
                 QMessageBox.warning(
                     self,
                     'Impossible to install virtualenv in {}'.format(self.get_current_os()),
@@ -672,6 +695,7 @@ class ArtellaUpdater(QWidget, object):
         self._set_splash_text('{} Launcher is ready to lunch!'.format(self._project_name))
 
         self._close_btn.setVisible(True)
+        self._info_tag_btn.setVisible(True)
 
         # We check that stored config path exits
         stored_path = self._get_app_config(self._install_env_var)
@@ -686,6 +710,7 @@ class ArtellaUpdater(QWidget, object):
                 self._open_install_folder_btn.setVisible(True)
                 self._reinstall_btn.setVisible(True)
                 self._uninstall_btn.setVisible(True)
+            else:
                 self._refresh_tag_btn.setVisible(True)
         else:
             QMessageBox.warning(
@@ -789,7 +814,7 @@ class ArtellaUpdater(QWidget, object):
                     'Installation cancelled by user')
                 return False
             if not os.path.isdir(install_path):
-                LOGGER.error('Selected Path does not exists!')
+                LOGGER.info('Selected Path does not exists!')
                 QMessageBox.information(
                     self,
                     'Selected Path does nto exists',
@@ -1302,21 +1327,21 @@ class ArtellaUpdater(QWidget, object):
 
     def _install_deployment_requirements(self):
         if not self._venv_info:
-            LOGGER.error('Impossible to install Deployment Requirements because Virtual Environment is not configured!')
+            self._show_error('Impossible to install Deployment Requirements because Virtual Environment is not configured!')
             return False
 
         if not self._requirements_path or not os.path.isfile(self._requirements_path):
-            LOGGER.error(
-                'Impossible to install Deployment Requirements because file does not exists: "{}"'.format(
+            self._show_error(
+                'Impossible to install Deployment Requirements because file does not exists:\n\n"{}"'.format(
                     self._requirements_path)
             )
             return False
 
         pip_exe = self._venv_info.get('pip_exe', None)
         if not pip_exe or not os.path.isfile(pip_exe):
-            LOGGER.error(
+            self._show_error(
                 'Impossible to install Deployment Requirements because pip not found installed in '
-                'Virtual Environment: "{}"'.format(pip_exe)
+                'Virtual Environment:\n\n"{}"'.format(pip_exe)
             )
             return False
 
@@ -1347,6 +1372,13 @@ class ArtellaUpdater(QWidget, object):
                 return False
             valid_install = self._install_deployment_requirements()
             if not valid_install:
+                LOGGER.info("Forcing uninstall ...")
+                QMessageBox.information(
+                    self._splash,
+                    'Forcing Uninstall',
+                    'Current installation is not valid.\n\nUninstall process will start after closing this dialog.\n\n'
+                    'Next time you launch the application, you will need to select a new installation path')
+                self._on_uninstall(force=True)
                 return False
 
         return True
@@ -1546,27 +1578,14 @@ class ArtellaUpdater(QWidget, object):
         :return:
         """
 
-        # TODO: This only works with Windows and has a dependency on psutil library
-        # TODO: Find a cross-platform way of doing this
-
-        psutil_available = True
-        try:
-            import psutil
-        except ImportError:
-            psutil_available = False
-
-        if not psutil_available:
-            LOGGER.warning('Impossible to close Artella app instance because psutil is not available!')
-            return
-
         try:
             for proc in psutil.process_iter():
                 if proc.name() == '{}.exe'.format(ARTELLA_APP_NAME):
                     LOGGER.debug('Killing Artella App process: {}'.format(proc.name()))
                     proc.kill()
             return True
-        except RuntimeError:
-            LOGGER.error('Impossible to close Artella app instances because psutil library is not available!')
+        except RuntimeError as exc:
+            LOGGER.error('Error while close Artella app instances using psutil library | {}'.format(exc))
             return False
 
     def _get_artella_app(self):
@@ -1625,6 +1644,17 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.info('Launching Artella App ...')
             LOGGER.debug('Artella App File: {0}'.format(artella_app_file))
             os.startfile(artella_app_file.replace('\\', '//'))
+
+    def _on_open_tag_info(self):
+        """
+        Internal callback function that is called when tag info button is clicked by user
+        Opens webpage of the release in the user browser
+        """
+
+        if self._dev:
+            webbrowser.open('https://github.com/{}/releases'.format(self._repository))
+        else:
+            webbrowser.open('https://github.com/{}/releases/tag/{}'.format(self._repository, self._deploy_tag))
 
     def _on_refresh_tag(self):
         """
@@ -1686,7 +1716,7 @@ class ArtellaUpdater(QWidget, object):
         if res == QMessageBox.Yes:
             self._load(clean=True)
 
-    def _on_uninstall(self):
+    def _on_uninstall(self, force=False):
         """
         Internal callback function that is called when the user press Uninstall button
         Removes environment variable and Tools folder
@@ -1698,21 +1728,27 @@ class ArtellaUpdater(QWidget, object):
         install_path = self._get_installation_path()
         if install_path and os.path.isdir(install_path):
             dirs_to_remove = [os.path.join(install_path, self.get_clean_name())]
-            res = QMessageBox.question(
-                self._splash, 'Uninstalling {} Tools'.format(self._project_name),
-                'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
-                    self._project_name, '\n\t'.join(dirs_to_remove)), question_flags)
-            if res == QMessageBox.Yes:
+            res = None
+            if not force:
+                res = QMessageBox.question(
+                    self._splash, 'Uninstalling {} Tools'.format(self._project_name),
+                    'Are you sure you want to uninstall {} Tools?\n\nFolder/s that will be removed \n\t{}'.format(
+                        self._project_name, '\n\t'.join(dirs_to_remove)), question_flags)
+            if res == QMessageBox.Yes or force:
                 try:
                     for d in dirs_to_remove:
                         if os.path.isdir(d):
                             shutil.rmtree(d, ignore_errors=True)
                         elif os.path.isfile(d):
                             os.remove(d)
+                    after_files = os.listdir(self._install_path)
+                    if not after_files:
+                        os.remove(self._install_path)
                     self._set_config(self._install_env_var, '')
-                    QMessageBox.information(
-                        self._splash, '{} Tools uninstalled'.format(self._project_name),
-                        '{} Tools uninstalled successfully! App will be closed now!'.format(self._project_name))
+                    if not force:
+                        QMessageBox.information(
+                            self._splash, '{} Tools uninstalled'.format(self._project_name),
+                            '{} Tools uninstalled successfully! App will be closed now!'.format(self._project_name))
                     QApplication.instance().quit()
                 except Exception as e:
                     self._set_config(self._install_env_var, '')
@@ -1753,6 +1789,10 @@ class ArtellaUpdater(QWidget, object):
         process = subprocess.check_call(commands_list, shell=shell)
 
         return process
+
+    def _show_error(self, msg, title='Error'):
+        LOGGER.error(msg)
+        QMessageBox.critical(self._splash, title, msg)
 
 
 @contextlib.contextmanager
