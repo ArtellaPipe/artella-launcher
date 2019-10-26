@@ -507,12 +507,6 @@ class ArtellaUpdater(QWidget, object):
             except Exception as e:
                 print(e)
 
-    def _close_python_processes(self):
-        for proc in psutil.process_iter():
-            if proc.name() == 'python':
-                LOGGER.debug('Killing Python process: {}'.format(proc.name()))
-                proc.kill()
-
     def _setup_environment(self, clean=False):
 
         if not self._install_path:
@@ -532,6 +526,7 @@ class ArtellaUpdater(QWidget, object):
             self._clean_folder(venv_path)
             self._force_venv = True
         if self._force_venv or not os.path.isdir(venv_path):
+            self._close_python_processes()
             self._create_venv(force=True)
         self._force_venv = orig_force_env
 
@@ -554,6 +549,16 @@ class ArtellaUpdater(QWidget, object):
         # TODO: Check that all info contained in venv_info is valid
 
         return True
+
+    def _close_python_processes(self):
+        """
+        Internal function that closes all opened Python processes but the current one
+        """
+
+        for proc in psutil.process_iter():
+            if proc.name().startswith('python') and proc.pid != psutil.Process().pid:
+                LOGGER.debug('Killing Python process: {}'.format(proc.name()))
+                proc.kill()
 
     def _get_app_name(self):
         """
