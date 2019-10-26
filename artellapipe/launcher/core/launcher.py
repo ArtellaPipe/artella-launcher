@@ -289,7 +289,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
             plugin_widget = plugin(project=self._project, launcher=self)
             plugin_widget.launched.connect(self._on_launch_plugin)
             self._plugins_tab.addTab(plugin_widget, plugin_widget.LABEL)
-            self._plugins_tab.setTabIcon(self._plugins_tab.count()-1, plugin_widget.get_icon())
+            self._plugins_tab.setTabIcon(self._plugins_tab.count() - 1, plugin_widget.get_icon())
             self._plugins_tab.setCurrentWidget(plugin_widget)
         except Exception as e:
             raise exceptions.ArtellaPipeException(self._project, e)
