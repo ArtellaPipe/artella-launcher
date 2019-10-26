@@ -1647,7 +1647,6 @@ if __name__ == '__main__':
     parser.add_argument('--project-name', required=False)
     parser.add_argument('--version', required=False)
     parser.add_argument('--repository', required=False)
-    parser.add_argument('--environment', default='production')
     parser.add_argument('--icon-path', required=False, default=None)
     parser.add_argument('--splash-path', required=False, default=None)
     parser.add_argument('--script-path', required=False, default=None)
@@ -1666,7 +1665,6 @@ if __name__ == '__main__':
                 project_name=args.project_name,
                 app_version=args.version,
                 deployment_repository=args.repository,
-                environment=args.environment,
                 splash_path=args.splash_path,
                 script_path=args.script_path,
                 dev=args.dev
