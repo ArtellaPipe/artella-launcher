@@ -170,8 +170,80 @@
 
            <div itemprop="articleBody">
             
-  <div class="section" id="artellapipe-launcher-widgets-pluginspanel-module">
-<h1>artellapipe.launcher.widgets.pluginspanel module<a class="headerlink" href="#artellapipe-launcher-widgets-pluginspanel-module" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-artellapipe.launcher.widgets.pluginspanel">
+<span id="artellapipe-launcher-widgets-pluginspanel-module"></span><h1>artellapipe.launcher.widgets.pluginspanel module<a class="headerlink" href="#module-artellapipe.launcher.widgets.pluginspanel" title="Permalink to this headline">¶</a></h1>
+<p>Module that contains base widget that shows all available plugins for Artella Launcher</p>
+<dl class="class">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginButton">
+<em class="property">class </em><code class="sig-prename descclassname">artellapipe.launcher.widgets.pluginspanel.</code><code class="sig-name descname">PluginButton</code><span class="sig-paren">(</span><em class="sig-param">project</em>, <em class="sig-param">plugin</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tpQtLib.core.base.BaseWidget</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginButton.clicked">
+<code class="sig-name descname">clicked</code><em class="property"> = &lt;PySide2.QtCore.Signal object&gt;</em><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginButton.clicked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginButton.name">
+<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginButton.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the DCC
+:return: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginButton.setup_signals">
+<code class="sig-name descname">setup_signals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginButton.setup_signals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that set up signals of the widget</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginButton.staticMetaObject">
+<code class="sig-name descname">staticMetaObject</code><em class="property"> = &lt;PySide2.QtCore.QMetaObject object&gt;</em><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginButton.staticMetaObject" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginButton.ui">
+<code class="sig-name descname">ui</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginButton.ui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that sets up the ui of the widget
+Override it on new widgets (but always call super)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginsPanel">
+<em class="property">class </em><code class="sig-prename descclassname">artellapipe.launcher.widgets.pluginspanel.</code><code class="sig-name descname">PluginsPanel</code><span class="sig-paren">(</span><em class="sig-param">project</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginsPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tpQtLib.core.base.BaseWidget</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginsPanel.add_plugin">
+<code class="sig-name descname">add_plugin</code><span class="sig-paren">(</span><em class="sig-param">plugin</em><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginsPanel.add_plugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new plugin to the panel
+:param plugin: ArtellaLauncherPlugin</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginsPanel.closeLauncher">
+<code class="sig-name descname">closeLauncher</code><em class="property"> = &lt;PySide2.QtCore.Signal object&gt;</em><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginsPanel.closeLauncher" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginsPanel.openPlugin">
+<code class="sig-name descname">openPlugin</code><em class="property"> = &lt;PySide2.QtCore.Signal object&gt;</em><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginsPanel.openPlugin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginsPanel.staticMetaObject">
+<code class="sig-name descname">staticMetaObject</code><em class="property"> = &lt;PySide2.QtCore.QMetaObject object&gt;</em><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginsPanel.staticMetaObject" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="artellapipe.launcher.widgets.pluginspanel.PluginsPanel.ui">
+<code class="sig-name descname">ui</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#artellapipe.launcher.widgets.pluginspanel.PluginsPanel.ui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that sets up the ui of the widget
+Override it on new widgets (but always call super)</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 
