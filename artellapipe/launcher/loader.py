@@ -17,7 +17,7 @@ import inspect
 import logging.config
 
 
-def init(do_reload=False):
+def init(do_reload=False, init_libs=False):
     """
     Initializes module
     :param do_reload: bool, Whether to reload modules or not

@@ -214,8 +214,11 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = self._run_subprocess(commands_list=['virtualenv', '--version'])
-        process.wait()
+        try:
+            process = self._run_subprocess(commands_list=['virtualenv', '--version'])
+            process.wait()
+        except Exception:
+            return False
 
         return True if process.returncode == 0 else False
 
@@ -784,9 +787,9 @@ class ArtellaUpdater(QWidget, object):
 
         paths_to_register = self._get_paths_to_register()
 
-        process_cmd = '"{}" "{}" --project-name {} --install-path "{}" --paths-to-register "{}"'.format(
+        process_cmd = '"{}" "{}" --project-name {} --install-path "{}" --paths-to-register "{}" --tag "{}"'.format(
             py_exe, self._script_path,
-            self.get_clean_name(), self._install_path, '"{0}"'.format(' '.join(paths_to_register)))
+            self.get_clean_name(), self._install_path, '"{0}"'.format(' '.join(paths_to_register)), self._deploy_tag)
         if self._dev:
             process_cmd += ' --dev'
         process = self._run_subprocess(command=process_cmd, close_fds=True)
@@ -1790,7 +1793,10 @@ class ArtellaUpdater(QWidget, object):
                             os.remove(d)
                     after_files = os.listdir(self._install_path)
                     if not after_files:
-                        os.remove(self._install_path)
+                        try:
+                            os.remove(self._install_path)
+                        except Exception:
+                            pass
                     self._set_config(self._install_env_var, '')
                     if not force:
                         QMessageBox.information(
@@ -1805,7 +1811,12 @@ class ArtellaUpdater(QWidget, object):
                         'You will need to remove following folders manually:\n\n{}'.format(
                             self._project_name, e, traceback.format_exc(), '\n\t'.join(dirs_to_remove)))
         else:
-            LOGGER.warning('{} tools are not installed! Launch any DCC first!'.format(self._project_name))
+            msg = '{} tools are not installed! Launch any DCC first!'.format(self._project_name)
+            QMessageBox.information(
+                self._splash, '{} Tools are not installed'.format(self._project_name),
+                msg
+            )
+            LOGGER.warning(msg)
 
     def _run_subprocess(self, command=None, commands_list=None, close_fds=False, hide_console=True):
 
@@ -1813,7 +1824,7 @@ class ArtellaUpdater(QWidget, object):
             commands_list = list()
 
         creation_flags = 0
-        if hide_console:
+        if hide_console and not self._dev:
             creation_flags = 0x08000000
 
         if command:

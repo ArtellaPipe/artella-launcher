@@ -20,9 +20,10 @@ from Qt.QtWidgets import *
 
 from tpQtLib.widgets import tabs
 
-from artellapipe.gui import window
-from artellapipe.core import artellalib, config
+from artellapipe.widgets import window
+from artellapipe.core import config
 from artellapipe.utils import exceptions, resource
+from artellapipe.libs.artella.core import artellalib
 from artellapipe.launcher.core import defines, plugin as core_plugin
 from artellapipe.launcher.widgets import pluginspanel
 
@@ -34,7 +35,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
     VERSION = '0.0.1'
     LOGO_NAME = 'launcher_logo'
 
-    def __init__(self, project, install_path, paths_to_register=None, dev=False):
+    def __init__(self, project, install_path, paths_to_register=None, tag=None, dev=False):
 
         self._logger = None
         self._name = None
@@ -42,6 +43,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         self._plugins = None
         self._install_path = install_path
         self._paths_to_register = paths_to_register if paths_to_register else list()
+        self._tag = tag
         self._dev = dev
 
         super(ArtellaLauncher, self).__init__(
@@ -52,7 +54,8 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         self._config = config.ArtellaConfiguration(
             project_name=self._project.get_clean_name(),
-            config_name='artellapipe-launcher'
+            config_name='artellapipe-launcher',
+            environment=self._project.get_environment()
         )
 
         self.init_config()
@@ -162,6 +165,8 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         Function that initializes Artella launcher
         """
 
+        self._set_environment_variables()
+
         plugin_paths = self._get_plugin_paths()
         self._plugin_manager = core_plugin.PluginManager(plugin_paths=plugin_paths)
         loaded_plugins = self._plugin_manager.get_plugins()
@@ -171,6 +176,23 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         for plugin in loaded_plugins:
             self._add_plugin(plugin)
+
+    def _set_environment_variables(self):
+        """
+        Creates an environment variables that stores information that will be used later in DCC context
+        """
+
+        dev_env_var = '{}_env'.format(self._project.get_clean_name())
+        if self._dev:
+            os.environ[dev_env_var] = 'DEVELOPMENT'
+        else:
+            os.environ[dev_env_var] = 'PRODUCTION'
+
+        tag_env_var = '{}_tag'.format(self._project.get_clean_name())
+        if self._tag:
+            os.environ[tag_env_var] = self._tag
+        else:
+            os.environ[tag_env_var] = 'DEV'
 
     def _get_plugin_paths(self):
 
@@ -300,10 +322,10 @@ class ArtellaLauncher(window.ArtellaWindow, object):
             artellalib.spigot_client._connected = False
 
 
-def run(project, install_path, paths_to_register=None, dev=False):
+def run(project, install_path, paths_to_register=None, tag=None, dev=False):
     win = ArtellaLauncher(project=project,
                           install_path=install_path,
-                          paths_to_register=paths_to_register, dev=dev)
+                          paths_to_register=paths_to_register, tag=tag, dev=dev)
     win.show()
 
     return win
