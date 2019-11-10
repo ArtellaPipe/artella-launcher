@@ -1425,7 +1425,8 @@ class ArtellaUpdater(QWidget, object):
                     QMessageBox.information(
                         self._splash,
                         'Forcing Uninstall',
-                        'Current installation is not valid.\n\nUninstall process will start after closing this dialog.\n\n'
+                        'Current installation is not valid.'
+                        '\n\nUninstall process will start after closing this dialog.\n\n'
                         'Next time you launch the application, you will need to select a new installation path')
                     self._on_uninstall(force=True)
                     return False
