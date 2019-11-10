@@ -46,6 +46,8 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         self._tag = tag
         self._dev = dev
 
+        self._set_environment_variables(project)
+
         super(ArtellaLauncher, self).__init__(
             project=project,
             name='ArtellaLauncherWindow',
@@ -165,8 +167,6 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         Function that initializes Artella launcher
         """
 
-        self._set_environment_variables()
-
         plugin_paths = self._get_plugin_paths()
         self._plugin_manager = core_plugin.PluginManager(plugin_paths=plugin_paths)
         loaded_plugins = self._plugin_manager.get_plugins()
@@ -177,18 +177,24 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         for plugin in loaded_plugins:
             self._add_plugin(plugin)
 
-    def _set_environment_variables(self):
+    def _set_environment_variables(self, project=None):
         """
         Creates an environment variables that stores information that will be used later in DCC context
         """
 
-        dev_env_var = '{}_env'.format(self._project.get_clean_name())
+        if not project:
+            project = self._project
+
+        if not project:
+            raise RuntimeError('Impossible to launch Launcher because project is not defined!')
+
+        dev_env_var = '{}_env'.format(project.get_clean_name())
         if self._dev:
             os.environ[dev_env_var] = 'DEVELOPMENT'
         else:
             os.environ[dev_env_var] = 'PRODUCTION'
 
-        tag_env_var = '{}_tag'.format(self._project.get_clean_name())
+        tag_env_var = '{}_tag'.format(project.get_clean_name())
         if self._tag:
             os.environ[tag_env_var] = self._tag
         else:
