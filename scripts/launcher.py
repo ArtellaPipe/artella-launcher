@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Generate Python Virtual Environment to generate launcher')
     parser.add_argument('--project-name', type=str, required=True)
-    parser.add_argument('--tag', type=str, required=True)
+    parser.add_argument('--tag', type=str, required=False, default='DEV')
     parser.add_argument('--install-path', type=str, required=True)
     parser.add_argument('--paths-to-register', nargs='+', type=str, required=False)
     parser.add_argument('--dev', required=False, default=False, action='store_true')
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     with application() as app:
         import artellapipe
         loader_mod = importlib.import_module('{}.loader'.format(args.project_name))
-        loader_mod.init()
+        loader_mod.init(dev=args.dev)
         from artellapipe.launcher import loader
         loader.init()
         from artellapipe.launcher.core import launcher

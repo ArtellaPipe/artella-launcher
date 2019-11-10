@@ -86,9 +86,8 @@ class ArtellaUpdaterException(Exception, object):
 class ArtellaUpdater(QWidget, object):
     def __init__(
             self, app, project_name, app_version, deployment_repository, documentation_url=None,
-            deploy_tag=None, install_env_var=None, requirements_file_name=None,
-            force_venv=False, splash_path=None, script_path=None, dev=False, update_icon=False,
-            parent=None):
+            deploy_tag=None, install_env_var=None, requirements_file_name=None, force_venv=False,
+            splash_path=None, script_path=None, requirements_path=None, dev=False, update_icon=False, parent=None):
         super(ArtellaUpdater, self).__init__(parent=parent)
 
         self._config_data = self._read_config()
@@ -97,6 +96,12 @@ class ArtellaUpdater(QWidget, object):
             app.setWindowIcon(QIcon(self._get_resource(self._get_app_config('icon'))))
 
         self._dev = dev
+        self._requirements_path = requirements_path if requirements_path else None
+
+        # We force development mode when we force a specific requirements file
+        if self._requirements_path and os.path.isfile(self._requirements_path):
+            self._dev = True
+
         self._project_name = project_name if project_name else self._get_app_config('name')
         self._app_version = app_version if app_version else self._get_app_config('version')
         self._repository = deployment_repository if deployment_repository else self._get_app_config('repository')
@@ -118,7 +123,6 @@ class ArtellaUpdater(QWidget, object):
 
         self._install_path = None
         self._selected_tag_index = None
-        self._requirements_path = None
         self._documentation_url = documentation_url if documentation_url else self._get_default_documentation_url()
         self._install_env_var = install_env_var if install_env_var else self._get_default_install_env_var()
         self._requirements_file_name = requirements_file_name if requirements_file_name else 'requirements.txt'
@@ -1414,6 +1418,17 @@ class ArtellaUpdater(QWidget, object):
             return False
 
         if self._dev:
+            if self._install_path and os.path.isfile(self._requirements_path):
+                valid_install = self._install_deployment_requirements()
+                if not valid_install:
+                    LOGGER.info("Forcing uninstall ...")
+                    QMessageBox.information(
+                        self._splash,
+                        'Forcing Uninstall',
+                        'Current installation is not valid.\n\nUninstall process will start after closing this dialog.\n\n'
+                        'Next time you launch the application, you will need to select a new installation path')
+                    self._on_uninstall(force=True)
+                    return False
             return True
 
         with tempfile.TemporaryDirectory() as temp_dirname:
@@ -1874,6 +1889,7 @@ if __name__ == '__main__':
     parser.add_argument('--icon-path', required=False, default=None)
     parser.add_argument('--splash-path', required=False, default=None)
     parser.add_argument('--script-path', required=False, default=None)
+    parser.add_argument('--requirements-path', required=False, default=None)
     parser.add_argument('--dev', required=False, default=False, action='store_true')
     args = parser.parse_args()
 
@@ -1895,6 +1911,7 @@ if __name__ == '__main__':
                 deployment_repository=args.repository,
                 splash_path=args.splash_path,
                 script_path=args.script_path,
+                requirements_path=args.requirements_path,
                 dev=args.dev,
                 update_icon=not bool(icon_path)
             )
