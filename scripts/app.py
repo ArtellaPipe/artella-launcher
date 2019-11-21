@@ -48,7 +48,7 @@ ARTELLA_NEXT_VERSION_FILE_NAME = 'version_to_run_next'
 class ArtellaSplash(QSplashScreen, object):
     def __init__(self, pixmap):
 
-        self._offset = 0
+        self._offset = QPoint()
 
         super(ArtellaSplash, self).__init__(pixmap)
 
@@ -87,7 +87,8 @@ class ArtellaUpdater(QWidget, object):
     def __init__(
             self, app, project_name, app_version, deployment_repository, documentation_url=None,
             deploy_tag=None, install_env_var=None, requirements_file_name=None, force_venv=False,
-            splash_path=None, script_path=None, requirements_path=None, dev=False, update_icon=False, parent=None):
+            splash_path=None, script_path=None, requirements_path=None, artellapipe_configs_path=None,
+            dev=False, update_icon=False, parent=None):
         super(ArtellaUpdater, self).__init__(parent=parent)
 
         self._config_data = self._read_config()
@@ -97,6 +98,7 @@ class ArtellaUpdater(QWidget, object):
 
         self._dev = dev
         self._requirements_path = requirements_path if requirements_path else None
+        self._artella_configs_path = artellapipe_configs_path if artellapipe_configs_path else None
 
         # We force development mode when we force a specific requirements file
         if self._requirements_path and os.path.isfile(self._requirements_path):
@@ -129,6 +131,10 @@ class ArtellaUpdater(QWidget, object):
         self._all_tags = list()
         self._deploy_tag = deploy_tag if deploy_tag else self._get_deploy_tag()
         self._script_path = script_path if script_path and os.path.isfile(script_path) else self._get_script_path()
+
+        # If not valid tag is found we close the application
+        if not self._deploy_tag:
+            sys.exit()
 
         valid_load = self._load()
         if not valid_load:
@@ -791,18 +797,21 @@ class ArtellaUpdater(QWidget, object):
 
         paths_to_register = self._get_paths_to_register()
 
-        process_cmd = '"{}" "{}" --project-name {} --install-path "{}" --paths-to-register "{}" --tag "{}"'.format(
+        process_cmd = '"{}" "{}" --project-name {} --install-path "{}" --paths-to-register "{}" --tag "{}" ' \
+                      '--artella-configs-path "{}"'.format(
             py_exe, self._script_path,
-            self.get_clean_name(), self._install_path, '"{0}"'.format(' '.join(paths_to_register)), self._deploy_tag)
+            self.get_clean_name(), self._install_path, '"{0}"'.format(' '.join(paths_to_register)), self._deploy_tag,
+            self._artella_configs_path)
         if self._dev:
             process_cmd += ' --dev'
         process = self._run_subprocess(command=process_cmd, close_fds=True)
 
         self._splash.close()
 
-        if not self._dev:
-            time.sleep(3)
-            QApplication.instance().quit()
+        # if not self._dev:
+        time.sleep(3)
+        QApplication.instance().quit()
+        sys.exit()
 
     def _check_installation_path(self, install_path):
         """
@@ -933,7 +942,8 @@ class ArtellaUpdater(QWidget, object):
             try:
                 os.remove(str(old_config_path))
             except RuntimeError as exc:
-                LOGGER.error('Impossible to remove old configuration file: {} | {}'.format(exc, traceback.format_exc()))
+                msg = 'Impossible to remove old configuration file: {} | {}'.format(exc, traceback.format_exc())
+                self._show_error(msg)
                 return False
             LOGGER.info('Old Configuration file removed successfully!')
 
@@ -1024,8 +1034,8 @@ class ArtellaUpdater(QWidget, object):
 
         repository = self._get_deploy_repository_url(release=True)
         if not repository:
-            LOGGER.error(
-                '> Project {} GitHub repository is not valid! {}'.format(self._project_name.title(), repository))
+            msg = '> Project {} GitHub repository is not valid! {}'.format(self._project_name.title(), repository)
+            self._show_error(msg)
             return None
 
         if repository.startswith('https://github.com/'):
@@ -1069,19 +1079,22 @@ class ArtellaUpdater(QWidget, object):
         config_data = self.get_config_data()
         deploy_tag = config_data.get('tag', '')
         latest_deploy_tag = self._get_latest_deploy_tag()
+        if not latest_deploy_tag:
+            return None
+
         if not deploy_tag:
             deploy_tag = latest_deploy_tag
-        else:
-            deploy_tag_v = Version(deploy_tag)
-            latest_tag_v = Version(latest_deploy_tag)
-            if latest_tag_v > deploy_tag_v:
-                res = QMessageBox.question(
-                    self._splash, 'Newer version found: {}'.format(latest_deploy_tag),
-                    'Current Version: {}\nNew Version: {}\n\nDo you want to install new version?'.format(
-                        deploy_tag, latest_deploy_tag), QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
-                if res == QMessageBox.Yes:
-                    self._set_config('tag', latest_deploy_tag)
-                    deploy_tag = latest_deploy_tag
+
+        deploy_tag_v = Version(deploy_tag)
+        latest_tag_v = Version(latest_deploy_tag)
+        if latest_tag_v > deploy_tag_v:
+            res = QMessageBox.question(
+                self._splash, 'Newer version found: {}'.format(latest_deploy_tag),
+                'Current Version: {}\nNew Version: {}\n\nDo you want to install new version?'.format(
+                    deploy_tag, latest_deploy_tag), QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+            if res == QMessageBox.Yes:
+                self._set_config('tag', latest_deploy_tag)
+                deploy_tag = latest_deploy_tag
 
         LOGGER.info("Deploy Tag to use: {}".format(deploy_tag))
 
@@ -1104,8 +1117,8 @@ class ArtellaUpdater(QWidget, object):
 
         repository = self._get_deploy_repository_url(release=True)
         if not repository:
-            LOGGER.error(
-                '> Project {} GitHub repository is not valid! {}'.format(self._project_name.title(), repository))
+            msg = '> Project {} GitHub repository is not valid! {}'.format(self._project_name.title(), repository)
+            self._show_error(msg)
             return None
 
         if repository.startswith('https://github.com/'):
@@ -1140,7 +1153,8 @@ class ArtellaUpdater(QWidget, object):
                                     break
                             except InvalidVersion:
                                 # move on to next thing to parse it
-                                LOGGER.error("Encountered invalid version {}.".format(the_version))
+                                msg = 'Encountered invalid version {}.'.format(the_version)
+                                self._show_error(msg)
                         else:
                             version = the_version
                             break
@@ -1174,7 +1188,8 @@ class ArtellaUpdater(QWidget, object):
                                     LOGGER.debug("Found a pre-release version: {}. Trying next.".format(the_version))
                             except InvalidVersion:
                                 # move on to next thing to parse it
-                                LOGGER.error("Encountered invalid version {}.".format(the_version))
+                                msg = 'Encountered invalid version {}.'.format(the_version)
+                                self._show_error(msg)
                         else:
                             version = the_version
                             break
@@ -1182,15 +1197,16 @@ class ArtellaUpdater(QWidget, object):
                 r = r.find_next_sibling(class_='release-entry', recursive=False)
 
         if not version:
-            LOGGER.error(
-                'Impossible to retrieve {} lastest release version from GitHub!'.format(self._project_name.title()))
+            msg = 'Impossible to retrieve {} lastest release version from GitHub!'.format(self._project_name.title())
+            self._show_error(msg)
             return None
 
         if validate:
             try:
                 Version(version)
             except InvalidVersion:
-                LOGGER.error('Got invalid version: {}'.format(version))
+                msg = 'Got invalid version: {}'.format(version)
+                self._show_error(msg)
                 return None
 
         # return the release if we've reached far enough:
@@ -1335,12 +1351,14 @@ class ArtellaUpdater(QWidget, object):
         self._set_splash_text('Downloading {} Deployment Information ...'.format(self._project_name))
         deployment_url = self._get_deploy_repository_url()
         if not deployment_url:
-            LOGGER.error('Deployment URL not found!')
+            msg = 'Deployment URL not found!'
+            self._show_error(msg)
             return False
 
         response = requests.get(deployment_url, headers={'Connection': 'close'})
         if response.status_code != 200:
-            LOGGER.error('Deployment URL is not valid: "{}"'.format(deployment_url))
+            msg = 'Deployment URL is not valid: "{}"'.format(deployment_url)
+            self._show_error(msg)
             return False
 
         repo_name = urlparse(deployment_url).path.rsplit("/", 1)[-1]
@@ -1357,7 +1375,8 @@ class ArtellaUpdater(QWidget, object):
             if not valid_status:
                 LOGGER.warning('Retrying downloading and unzip deployment data: {}'.format(total_tries))
         if not valid_status:
-            LOGGER.error('Something went wrong during the download and unzipping of: {}'.format(deployment_url))
+            msg = 'Something went wrong during the download and unzipping of: {}'.format(deployment_url)
+            self._show_error(msg)
             return False
 
         self._set_splash_text('Searching Requirements File: {}'.format(self._requirements_file_name))
@@ -1368,7 +1387,8 @@ class ArtellaUpdater(QWidget, object):
                     requirement_path = os.path.join(root, name)
                     break
         if not requirement_path:
-            LOGGER.error('No file named: {} found in deployment repository!'.format(self._requirements_file_name))
+            msg = 'No file named: {} found in deployment repository!'.format(self._requirements_file_name)
+            self._show_error(msg)
             return False
         LOGGER.debug('Requirements File for Deployment "{}" found: "{}"'.format(deployment_url, requirement_path))
         self._requirements_path = requirement_path
@@ -1404,10 +1424,13 @@ class ArtellaUpdater(QWidget, object):
 
         try:
             process = self._run_subprocess(command=pip_cmd)
-            process.wait()
+            output = process.communicate()[0]
+            LOGGER.info(output)
+
             # We retry twice because sometimes pip fails when trying to install new packages
             process = self._run_subprocess(command=pip_cmd)
-            process.wait()
+            output = process.communicate()[0]
+            LOGGER.info(output)
         except Exception as exc:
             raise Exception(exc)
 
@@ -1418,7 +1441,7 @@ class ArtellaUpdater(QWidget, object):
             return False
 
         if self._dev:
-            if self._install_path and os.path.isfile(self._requirements_path):
+            if self._install_path and self._requirements_path and os.path.isfile(self._requirements_path):
                 valid_install = self._install_deployment_requirements()
                 if not valid_install:
                     LOGGER.info("Forcing uninstall ...")
@@ -1545,7 +1568,8 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.info('Files downloaded succesfully!')
             return True
         else:
-            LOGGER.error('Error when downloading files. Maybe server is down! Try it later')
+            msg = 'Error when downloading files. Maybe server is down! Try it later'
+            self._show_error(msg)
             return False
 
     def _unzip_file(self, filename, destination, remove_first=True, remove_sub_folders=None):
@@ -1651,7 +1675,8 @@ class ArtellaUpdater(QWidget, object):
                     proc.kill()
             return True
         except RuntimeError as exc:
-            LOGGER.error('Error while close Artella app instances using psutil library | {}'.format(exc))
+            msg = 'Error while close Artella app instances using psutil library | {}'.format(exc)
+            self._show_error(msg)
             return False
 
     def _get_artella_app(self):
@@ -1738,7 +1763,8 @@ class ArtellaUpdater(QWidget, object):
 
         new_tag = self._deploy_tag_combo.itemText(new_index)
         if not new_tag:
-            LOGGER.error('New Tag "{}" is not valid!'.format(new_tag))
+            msg = 'New Tag "{}" is not valid!'.format(new_tag)
+            self._show_error(msg)
             return
 
         res = QMessageBox.question(
@@ -1834,7 +1860,8 @@ class ArtellaUpdater(QWidget, object):
             )
             LOGGER.warning(msg)
 
-    def _run_subprocess(self, command=None, commands_list=None, close_fds=False, hide_console=True):
+    def _run_subprocess(self, command=None, commands_list=None, close_fds=False, hide_console=True,
+                        stdout=None):
 
         if not commands_list:
             commands_list = list()
@@ -1843,21 +1870,27 @@ class ArtellaUpdater(QWidget, object):
         if hide_console and not self._dev:
             creation_flags = 0x08000000
 
+        if close_fds:
+            stdout = None
+
         if command:
-            process = subprocess.Popen(command, close_fds=close_fds, creationflags=creation_flags)
+            process = subprocess.Popen(
+                command, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
         elif commands_list:
-            process = subprocess.Popen(commands_list, close_fds=close_fds, creationflags=creation_flags)
+            process = subprocess.Popen(
+                commands_list, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
         else:
-            LOGGER.error(
-                "Impossible to launch subprocess: command={}, commands_list={}, close_fds={}, hide_console={}".format(
-                    command, commands_list, close_fds, hide_console))
+            msg = "Impossible to launch subprocess: command={}, commands_list={}, close_fds={}, hide_console={}".format(
+                command, commands_list, close_fds, hide_console)
+            self._show_error(msg)
             return None
 
         return process
 
     def _check_call(self, commands_list, shell=True):
         if not commands_list:
-            LOGGER.error("Impossible to launch subprocess: commands_list={}".format(commands_list))
+            msg = "Impossible to launch subprocess: commands_list={}".format(commands_list)
+            self._show_error(msg)
             return None
 
         process = subprocess.check_call(commands_list, shell=shell)
@@ -1891,6 +1924,7 @@ if __name__ == '__main__':
     parser.add_argument('--splash-path', required=False, default=None)
     parser.add_argument('--script-path', required=False, default=None)
     parser.add_argument('--requirements-path', required=False, default=None)
+    parser.add_argument('--artellapipe-configs-path', required=False, default=None)
     parser.add_argument('--dev', required=False, default=False, action='store_true')
     args = parser.parse_args()
 
@@ -1913,6 +1947,7 @@ if __name__ == '__main__':
                 splash_path=args.splash_path,
                 script_path=args.script_path,
                 requirements_path=args.requirements_path,
+                artellapipe_configs_path=args.artellapipe_configs_path,
                 dev=args.dev,
                 update_icon=not bool(icon_path)
             )

@@ -8,6 +8,7 @@ __license__ = "MIT"
 __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
+import os
 import sys
 import argparse
 import importlib
@@ -35,12 +36,18 @@ if __name__ == '__main__':
     parser.add_argument('--tag', type=str, required=False, default='DEV')
     parser.add_argument('--install-path', type=str, required=True)
     parser.add_argument('--paths-to-register', nargs='+', type=str, required=False)
+    parser.add_argument('--artellapipe-configs-path', type=str, required=False)
     parser.add_argument('--dev', required=False, default=False, action='store_true')
     args = parser.parse_args()
 
     with application() as app:
         import artellapipe
         loader_mod = importlib.import_module('{}.loader'.format(args.project_name))
+
+        artella_configs_path = args.artellapipe_configs_path
+        if artella_configs_path and os.path.isdir(artella_configs_path):
+            os.environ['ARTELLA_CONFIGS_PATH'] = artella_configs_path
+
         loader_mod.init(dev=args.dev)
         from artellapipe.launcher import loader
         loader.init()

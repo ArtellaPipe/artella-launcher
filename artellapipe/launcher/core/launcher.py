@@ -13,8 +13,10 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 import os
+import sys
 import logging
 import importlib
+import time
 
 from Qt.QtWidgets import *
 
@@ -161,6 +163,12 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
     def setup_signals(self):
         self._plugins_panel.openPlugin.connect(self._on_open_plugin)
+        self.windowClosed.connect(self._on_close)
+
+    def closeEvent(self, event):
+        super(ArtellaLauncher, self).closeEvent(event)
+        QApplication.instance().quit()
+        sys.exit()
 
     def init(self):
         """
@@ -306,7 +314,20 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         self._console.hide() if self._console.isVisible() else self._console.show()
 
+    def _on_close(self):
+        """
+        Internal callback function that is called when launcher window is closed
+        """
+
+        self.close()
+        sys.exit(0)
+
     def _on_open_plugin(self, plugin):
+        """
+        Internal callback function that is called when a plugin is opened
+        :param plugin: ArtellaPlugin
+        """
+
         for i in range(self._plugins_tab.count()):
             plugin_widget = self._plugins_tab.widget(i)
             if plugin_widget == plugin:
@@ -323,9 +344,16 @@ class ArtellaLauncher(window.ArtellaWindow, object):
             raise exceptions.ArtellaPipeException(self._project, e)
 
     def _on_launch_plugin(self, flag):
-        if flag:
-            self.close()
-            artellalib.spigot_client._connected = False
+        """
+        Internal callback function that is called when a plugin is launched
+        :param flag: bool
+        """
+
+        pass
+
+        # if flag:
+        #     self.close()
+        #     artellalib.spigot_client._connected = False
 
 
 def run(project, install_path, paths_to_register=None, tag=None, dev=False):
