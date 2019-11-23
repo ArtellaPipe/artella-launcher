@@ -16,7 +16,6 @@ import os
 import sys
 import logging
 import importlib
-import time
 
 from Qt.QtWidgets import *
 
@@ -25,9 +24,9 @@ from tpQtLib.widgets import tabs
 from artellapipe.widgets import window
 from artellapipe.core import config
 from artellapipe.utils import exceptions, resource
-from artellapipe.libs.artella.core import artellalib
 from artellapipe.launcher.core import defines, plugin as core_plugin
 from artellapipe.launcher.widgets import pluginspanel
+from artellapipe.libs.artella.core import artellalib
 
 LOGGER = logging.getLogger()
 
@@ -164,11 +163,6 @@ class ArtellaLauncher(window.ArtellaWindow, object):
     def setup_signals(self):
         self._plugins_panel.openPlugin.connect(self._on_open_plugin)
         self.windowClosed.connect(self._on_close)
-
-    def closeEvent(self, event):
-        super(ArtellaLauncher, self).closeEvent(event)
-        QApplication.instance().quit()
-        sys.exit()
 
     def init(self):
         """
@@ -319,8 +313,12 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         Internal callback function that is called when launcher window is closed
         """
 
+        spigot_client = artellalib.get_spigot_client(force_create=False)
+        if spigot_client:
+            spigot_client._connected = False
+
         self.close()
-        sys.exit(0)
+        QApplication.instance().quit()
 
     def _on_open_plugin(self, plugin):
         """
