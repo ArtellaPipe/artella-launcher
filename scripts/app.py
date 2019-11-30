@@ -797,7 +797,6 @@ class ArtellaUpdater(QWidget, object):
 
         paths_to_register = self._get_paths_to_register()
 
-
         process_cmd = '"{}" "{}" --project-name {} --install-path "{}" --paths-to-register "{}" --tag "{}"'.format(
             py_exe, self._script_path, self.get_clean_name(), self._install_path, '"{0}"'.format(
                 ' '.join(paths_to_register)), self._deploy_tag)
