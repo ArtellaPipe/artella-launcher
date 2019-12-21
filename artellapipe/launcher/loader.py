@@ -36,7 +36,7 @@ def init(do_reload=False, dev=False):
 
     class ArtellaLauncher(importer.Importer, object):
         def __init__(self, debug=False):
-            super(ArtellaLauncher, self).__init__(module_name='artellapipe.launcher')
+            super(ArtellaLauncher, self).__init__(module_name='artellapipe.launcher', debug=debug)
 
         def get_module_path(self):
             """
