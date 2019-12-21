@@ -17,7 +17,7 @@ import inspect
 import logging.config
 
 
-def init(do_reload=False, init_libs=False):
+def init(do_reload=False, dev=False):
     """
     Initializes module
     :param do_reload: bool, Whether to reload modules or not
@@ -25,16 +25,17 @@ def init(do_reload=False, init_libs=False):
 
     logging.config.fileConfig(get_logging_config(), disable_existing_loggers=False)
 
-    import sentry_sdk
-    try:
-        sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788")
-    except RuntimeError:
-        sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788", default_integrations=False)
+    if not dev:
+        import sentry_sdk
+        try:
+            sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788")
+        except RuntimeError:
+            sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788", default_integrations=False)
 
     from tpPyUtils import importer
 
     class ArtellaLauncher(importer.Importer, object):
-        def __init__(self):
+        def __init__(self, debug=False):
             super(ArtellaLauncher, self).__init__(module_name='artellapipe.launcher')
 
         def get_module_path(self):
@@ -59,7 +60,7 @@ def init(do_reload=False, init_libs=False):
 
     packages_order = []
 
-    launcher_importer = importer.init_importer(importer_class=ArtellaLauncher, do_reload=False)
+    launcher_importer = importer.init_importer(importer_class=ArtellaLauncher, do_reload=False, debug=dev)
     launcher_importer.import_packages(order=packages_order, only_packages=False)
     if do_reload:
         launcher_importer.reload_all()
