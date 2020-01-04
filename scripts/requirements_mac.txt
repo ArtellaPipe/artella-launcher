@@ -1,8 +1,7 @@
 # ===================================================================
 # artellapipe-launcher requirements file
 # ===================================================================
-PySide;python_version <= '3.4'
-PySide2;python_version > '3.4'
+PySide2
 pathlib2
 requests
 lxml
@@ -12,3 +11,4 @@ PyInstaller
 appdirs
 backports.tempfile
 psutil
+Qt.py

@@ -36,13 +36,25 @@ try:
 except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
-    from PySide.QtGui import *
+    from PySide2.QtGui import *
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 ARTELLA_APP_NAME = 'lifecycler'
 ARTELLA_NEXT_VERSION_FILE_NAME = 'version_to_run_next'
+
+
+def is_windows():
+    return sys.platform.startswith('win')
+
+
+def is_mac():
+    return sys.platform == 'darwin'
+
+
+def is_linux():
+    return 'linux' in sys.platform
 
 
 class ArtellaSplash(QSplashScreen, object):
@@ -202,7 +214,7 @@ class ArtellaUpdater(QWidget, object):
         :return: bool
         """
 
-        process = self._run_subprocess(commands_list=['python', '-c', 'quit()'])
+        process = self._run_subprocess(commands_list=['python', '-c', 'quit()'], shell=False)
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -225,7 +237,7 @@ class ArtellaUpdater(QWidget, object):
         """
 
         try:
-            process = self._run_subprocess(commands_list=['virtualenv', '--version'])
+            process = self._run_subprocess(commands_list=['virtualenv', '--version'], shell=False)
             process.wait()
         except Exception:
             return False
@@ -583,9 +595,15 @@ class ArtellaUpdater(QWidget, object):
         self._force_venv = orig_force_env
 
         root_path = os.path.dirname(venv_path)
-        venv_scripts = os.path.join(venv_path, 'Scripts')
-        venv_python = os.path.join(venv_scripts, 'python.exe')
-        pip_exe = os.path.join(venv_scripts, 'pip.exe')
+
+        if is_windows():
+            venv_scripts = os.path.join(venv_path, 'Scripts')
+            venv_python = os.path.join(venv_scripts, 'python.exe')
+            pip_exe = os.path.join(venv_scripts, 'pip.exe')
+        elif is_mac():
+            venv_scripts = os.path.join(venv_path, 'bin')
+            venv_python = os.path.join(venv_scripts, 'python')
+            pip_exe = os.path.join(venv_scripts, 'pip')
 
         venv_info = dict()
         venv_info['root_path'] = root_path
@@ -843,9 +861,15 @@ class ArtellaUpdater(QWidget, object):
                 if d == self.get_clean_name():
                     old_dir = os.path.join(install_path, d)
                     content = os.listdir(old_dir)
-                    if 'Include' not in content or 'Lib' not in content or 'Scripts' not in content:
-                        old_installation = True
-                        break
+                    if is_windows():
+                        if 'Include' not in content or 'Lib' not in content or 'Scripts' not in content:
+                            old_installation = True
+                            break
+                    elif is_mac():
+                        if 'include' not in content or 'lib' not in content or 'bin' not in content:
+                            old_installation = True
+                            break
+
         if old_installation:
             LOGGER.info("Old installation found. Removing ...")
             self._set_config(self.install_env_var, '')
@@ -1281,7 +1305,7 @@ class ArtellaUpdater(QWidget, object):
             shutil.rmtree(venv_path)
 
         self._set_splash_text('Creating Virtual Environment: "{}"'.format(venv_path))
-        process = self._run_subprocess(commands_list=['virtualenv', venv_path])
+        process = self._run_subprocess(commands_list=['virtualenv', venv_path], shell=False)
         process.wait()
 
         return True if process.returncode == 0 else False
@@ -1424,14 +1448,15 @@ class ArtellaUpdater(QWidget, object):
         LOGGER.info('Launching pip command: {}'.format(pip_cmd))
 
         try:
-            process = self._run_subprocess(command=pip_cmd)
-            output = process.communicate()[0]
-            LOGGER.info(output)
+            if is_windows():
+                process = self._run_subprocess(command=pip_cmd)
+                output = process.communicate()[0]
+                LOGGER.info(output)
 
-            # We retry twice because sometimes pip fails when trying to install new packages
-            process = self._run_subprocess(command=pip_cmd)
-            output = process.communicate()[0]
-            LOGGER.info(output)
+                # We retry twice because sometimes pip fails when trying to install new packages
+                process = self._run_subprocess(command=pip_cmd)
+                output = process.communicate()[0]
+                LOGGER.info(output)
         except Exception as exc:
             raise Exception(exc)
 
@@ -1616,9 +1641,9 @@ class ArtellaUpdater(QWidget, object):
         :return: str
         """
 
-        if platform.system() == 'Darwin':
+        if is_mac():
             artella_folder = os.path.join(os.path.expanduser('~/Library/Application Support/'), 'Artella')
-        elif platform.system() == 'Windows':
+        elif is_windows():
             artella_folder = os.path.join(os.getenv('PROGRAMDATA'), 'Artella')
         else:
             return None
@@ -1671,8 +1696,11 @@ class ArtellaUpdater(QWidget, object):
         """
 
         try:
+            proc_name = ARTELLA_APP_NAME
+            if is_windows():
+                proc_name = '{}.exe'.format(proc_name)
             for proc in psutil.process_iter():
-                if proc.name() == '{}.exe'.format(ARTELLA_APP_NAME):
+                if proc.name() == proc_name:
                     LOGGER.debug('Killing Artella App process: {}'.format(proc.name()))
                     proc.kill()
             return True
@@ -1717,13 +1745,7 @@ class ArtellaUpdater(QWidget, object):
 
         # TODO: This should not work in MAC, find a cross-platform way of doing this
 
-        if os.name == 'mac':
-            LOGGER.info('Launch Artella App: does not supports MAC yet')
-            QMessageBox.information(
-                None,
-                'Not supported in MAC',
-                'Artella Pipeline do not support automatically Artella Launch for Mac. '
-                'Please close Maya, launch Artella manually, and start Maya again!')
+        if is_mac():
             artella_app_file = self._get_artella_app() + '.bundle'
         else:
             #  Executing Artella executable directly does not work
@@ -1863,7 +1885,7 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.warning(msg)
 
     def _run_subprocess(self, command=None, commands_list=None, close_fds=False, hide_console=True,
-                        stdout=None):
+                        stdout=None, shell=True):
 
         if not commands_list:
             commands_list = list()
@@ -1876,11 +1898,21 @@ class ArtellaUpdater(QWidget, object):
             stdout = None
 
         if command:
-            process = subprocess.Popen(
-                command, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+            if is_windows():
+                process = subprocess.Popen(
+                    command, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+            elif is_mac():
+                process = subprocess.Popen(command, close_fds=close_fds, stdout=stdout, shell=shell)
+            else:
+                process = subprocess.Popen(command, close_fds=close_fds, stdout=stdout)
         elif commands_list:
-            process = subprocess.Popen(
-                commands_list, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+            if is_windows():
+                process = subprocess.Popen(
+                    commands_list, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+            elif is_mac():
+                process = subprocess.Popen(commands_list, close_fds=close_fds, stdout=stdout, shell=shell)
+            else:
+                process = subprocess.Popen(commands_list, close_fds=close_fds, stdout=stdout)
         else:
             msg = "Impossible to launch subprocess: command={}, commands_list={}, close_fds={}, hide_console={}".format(
                 command, commands_list, close_fds, hide_console)
