@@ -157,7 +157,9 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         self._plugins_panel = pluginspanel.PluginsPanel(project=self._project)
         self._plugins_tab.addTab(self._plugins_panel, 'HOME')
         self._plugins_tab.setTabIcon(0, resource.ResourceManager().icon('home'))
-        self._plugins_tab.tabBar().tabButton(0, QTabBar.RightSide).resize(0, 0)
+        tab_btn = self._plugins_tab.tabBar().tabButton(0, QTabBar.RightSide)
+        if tab_btn:
+            tab_btn.resize(0, 0)
         self._plugins_tab.tabBar().set_is_editable(False)
 
     def setup_signals(self):
@@ -295,7 +297,8 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         :return: str
         """
 
-        data_path = os.path.join(os.getenv('APPDATA'), self.get_clean_name())
+        import appdirs
+        data_path = appdirs.user_data_dir(self.get_clean_name())
         if not os.path.isdir(data_path):
             os.makedirs(data_path)
 
