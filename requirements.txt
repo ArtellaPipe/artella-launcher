@@ -3,7 +3,7 @@
 # ===================================================================
 Qt.py
 pathlib2
-requests
+requests==2.22.0
 packaging
 beautifulsoup4
 pyinstaller
@@ -15,5 +15,6 @@ sphinx
 sphinx_rtd_theme
 python-json-logger
 sentry-sdk
-tpPyUtils
-tpQtLib
+tpDcc-libs-python
+tpDcc-core
+tpDcc-libs-qt
