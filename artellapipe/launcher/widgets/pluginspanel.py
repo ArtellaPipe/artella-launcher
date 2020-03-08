@@ -15,8 +15,8 @@ __email__ = "tpovedatd@gmail.com"
 from Qt.QtCore import *
 from Qt.QtWidgets import *
 
-from tpQtLib.core import base
-from tpQtLib.widgets import layouts
+from tpDcc.libs.qt.core import base
+from tpDcc.libs.qt.widgets import layouts
 
 
 class PluginButton(base.BaseWidget, object):

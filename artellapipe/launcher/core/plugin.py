@@ -21,10 +21,9 @@ import traceback
 
 from Qt.QtCore import *
 
-from tpPyUtils import python, decorators, path as path_utils
-from tpQtLib.core import base
-
-from artellapipe.utils import resource
+import tpDcc
+from tpDcc.libs.python import python, decorators, path as path_utils
+from tpDcc.libs.qt.core import base
 
 LOGGER = logging.getLogger()
 
@@ -122,20 +121,20 @@ class ArtellaLauncherPlugin(base.BaseWidget, object):
         plugin_icon = cls.ICON
         icon_split = plugin_icon.split('/')
         if len(icon_split) == 1:
-            theme = 'color'
+            theme = 'default'
         elif len(icon_split) > 1:
             theme = icon_split[0]
         else:
-            theme = 'color'
-        icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(cls.ICON), key='project')
+            theme = 'default'
+        icon_path = tpDcc.ResourcesMgr().get('icons', theme, '{}.png'.format(cls.ICON), key='project')
         if not icon_path or not os.path.isfile(icon_path):
-            icon_path = resource.ResourceManager().get('icons', theme, '{}.png'.format(cls.ICON))
+            icon_path = tpDcc.ResourcesMgr().get('icons', theme, '{}.png'.format(cls.ICON))
             if not icon_path or not os.path.isfile(icon_path):
-                plugin_icon = resource.ResourceManager().icon('plugin')
+                plugin_icon = tpDcc.ResourcesMgr().icon('plugin')
             else:
-                plugin_icon = resource.ResourceManager().icon(cls.ICON, theme=theme)
+                plugin_icon = tpDcc.ResourcesMgr().icon(cls.ICON, theme=theme)
         else:
-            plugin_icon = resource.ResourceManager().icon(cls.ICON, theme=theme, key='project')
+            plugin_icon = tpDcc.ResourcesMgr().icon(cls.ICON, theme=theme, key='launcher')
 
         return plugin_icon
 

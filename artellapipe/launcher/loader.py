@@ -16,6 +16,8 @@ import os
 import inspect
 import logging.config
 
+import tpDcc as tp
+
 
 def init(do_reload=False, dev=False):
     """
@@ -23,7 +25,11 @@ def init(do_reload=False, dev=False):
     :param do_reload: bool, Whether to reload modules or not
     """
 
-    logging.config.fileConfig(get_logging_config(), disable_existing_loggers=False)
+    from tpDcc.libs.python import importer
+    from artellapipe.launcher import register
+
+    logger = create_logger()
+    register.register_class('logger', logger)
 
     if not dev:
         import sentry_sdk
@@ -31,8 +37,6 @@ def init(do_reload=False, dev=False):
             sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788")
         except RuntimeError:
             sentry_sdk.init("https://c329025c8d5a4e978dd7a4117ab6281d@sentry.io/1770788", default_integrations=False)
-
-    from tpPyUtils import importer
 
     class ArtellaLauncher(importer.Importer, object):
         def __init__(self, debug=False):
@@ -51,8 +55,8 @@ def init(do_reload=False, dev=False):
                     mod_dir = os.path.dirname(__file__)
                 except Exception:
                     try:
-                        import tpDccLib
-                        mod_dir = tpDccLib.__path__[0]
+                        import artellapipe.launcher
+                        mod_dir = artellapipe.launcher.__path__[0]
                     except Exception:
                         return None
 
@@ -65,11 +69,18 @@ def init(do_reload=False, dev=False):
     if do_reload:
         launcher_importer.reload_all()
 
-    create_logger_directory()
+    register_resources()
 
-    from artellapipe.utils import resource
-    resources_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
-    resource.ResourceManager().register_resource(resources_path, 'launcher')
+
+def create_logger():
+    """
+    Returns logger of current module
+    """
+
+    logging.config.fileConfig(get_logging_config(), disable_existing_loggers=False)
+    logger = logging.getLogger('artellapipe-launcher')
+
+    return logger
 
 
 def create_logger_directory():
@@ -103,3 +114,12 @@ def get_logging_level():
         return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL')
 
     return os.environ.get('ARTELLAPIPE_LAUNCHER_LOG_LEVEL', 'DEBUG')
+
+
+def register_resources():
+    """
+    Registers artellapipe-launcher resources
+    """
+
+    resources_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
+    tp.ResourcesMgr().register_resource(resources_path, 'launcher')

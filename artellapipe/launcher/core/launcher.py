@@ -13,17 +13,16 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 import os
-import sys
 import logging
 import importlib
 
 from Qt.QtWidgets import *
 
-from tpQtLib.widgets import tabs
+import tpDcc
+from tpDcc.libs.qt.widgets import tabs
 
 from artellapipe.widgets import window
-from artellapipe.core import config
-from artellapipe.utils import exceptions, resource
+from artellapipe.utils import exceptions
 from artellapipe.launcher.core import defines, plugin as core_plugin
 from artellapipe.launcher.widgets import pluginspanel
 from artellapipe.libs.artella.core import artellalib
@@ -49,16 +48,18 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         self._set_environment_variables(project)
 
+        config = tpDcc.ConfigsMgr().get_config(
+            config_name='artellapipe-launcher',
+            package_name=project.get_clean_name(),
+            root_package_name='artellapipe',
+            environment=project.get_environment()
+        )
+
         super(ArtellaLauncher, self).__init__(
             project=project,
             name='ArtellaLauncherWindow',
-            title='Launcher'
-        )
-
-        self._config = config.ArtellaConfiguration(
-            project_name=self._project.get_clean_name(),
-            config_name='artellapipe-launcher',
-            environment=self._project.get_environment()
+            title='Launcher',
+            config=config
         )
 
         self.init_config()
@@ -100,7 +101,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         :return: str
         """
 
-        return resource.ResourceManager().icon(self._name.lower().replace(' ', ''), theme=None, key='project')
+        return tpDcc.ResourcesMgr().icon(self._name.lower().replace(' ', ''), theme=None, key='project')
 
     @property
     def config(self):
@@ -156,7 +157,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         self._plugins_panel = pluginspanel.PluginsPanel(project=self._project)
         self._plugins_tab.addTab(self._plugins_panel, 'HOME')
-        self._plugins_tab.setTabIcon(0, resource.ResourceManager().icon('home'))
+        self._plugins_tab.setTabIcon(0, tpDcc.ResourcesMgr().icon('home'))
         tab_btn = self._plugins_tab.tabBar().tabButton(0, QTabBar.RightSide)
         if tab_btn:
             tab_btn.resize(0, 0)
@@ -164,7 +165,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
     def setup_signals(self):
         self._plugins_panel.openPlugin.connect(self._on_open_plugin)
-        self.windowClosed.connect(self._on_close)
+        self.closed.connect(self._on_close)
 
     def init(self):
         """
@@ -255,7 +256,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         Creates and initializes Artella launcher logger
         """
 
-        from tpPyUtils import log as log_utils
+        from tpDcc.libs.python import log as log_utils
 
         log_path = self.get_data_path()
         if not os.path.exists(log_path):
