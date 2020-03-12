@@ -79,7 +79,7 @@ class LauncherGenerator(object):
                 if os.path.isdir(venv_folder):
                     shutil.rmtree(venv_folder)
 
-            #self._cleanup()
+            # self._cleanup()
         except Exception as exc:
             raise Exception(traceback.format_exc())
         finally:
