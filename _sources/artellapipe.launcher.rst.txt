@@ -5,6 +5,7 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 4
 
    artellapipe.launcher.core
    artellapipe.launcher.plugins
@@ -15,6 +16,7 @@ Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    artellapipe.launcher.loader
    artellapipe.launcher.register

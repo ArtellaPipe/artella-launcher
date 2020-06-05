@@ -5,6 +5,7 @@ Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    artellapipe.launcher.widgets.console
    artellapipe.launcher.widgets.pluginspanel
