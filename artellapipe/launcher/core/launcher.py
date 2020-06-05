@@ -19,6 +19,7 @@ import importlib
 from Qt.QtWidgets import *
 
 import tpDcc
+from tpDcc.libs.qt.core import contexts
 from tpDcc.libs.qt.widgets import tabs
 
 from artellapipe.widgets import window
@@ -359,9 +360,11 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
 
 def run(project, install_path, paths_to_register=None, tag=None, dev=False):
-    win = ArtellaLauncher(project=project,
-                          install_path=install_path,
-                          paths_to_register=paths_to_register, tag=tag, dev=dev)
-    win.show()
 
-    return win
+    with contexts.application():
+        win = ArtellaLauncher(project=project,
+                              install_path=install_path,
+                              paths_to_register=paths_to_register, tag=tag, dev=dev)
+        win.show()
+
+        return win

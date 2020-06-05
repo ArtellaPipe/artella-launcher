@@ -1,2 +1,4 @@
 include artellapipe/launcher/__logging__.ini
 recursive-include artellapipe/launcher/resources/* *.*
+include versioneer.py
+include artellapipe/launcher/_version.py
