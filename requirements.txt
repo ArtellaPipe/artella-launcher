@@ -6,7 +6,8 @@ pathlib2
 requests==2.22.0
 packaging
 beautifulsoup4
-pyinstaller
+pyinstaller==4.0;python_version > '3.4'
+pyinstaller==3.6;python_version <= '3.4'
 lxml
 pytest
 pytest-cov
