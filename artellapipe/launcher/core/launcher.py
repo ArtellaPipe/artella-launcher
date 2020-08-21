@@ -318,7 +318,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         Internal callback function that is called when launcher window is closed
         """
 
-        spigot_client = artellalib.get_spigot_client(force_create=False)
+        spigot_client = artellalib.get_artella_client(force_create=False)
         if spigot_client:
             spigot_client._connected = False
 
