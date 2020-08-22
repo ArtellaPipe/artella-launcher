@@ -13,6 +13,7 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 import os
+import time
 import logging
 import importlib
 
@@ -183,6 +184,16 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         for plugin in loaded_plugins:
             self._add_plugin(plugin)
+
+        # TODO: The UI should not be enabled until we connect to Remote server
+        client = artellalib.get_artella_client()
+        remote_projects = client.get_remote_projects(force_update=True) or dict()
+        if not remote_projects:
+            # If the project is an Enterprise one, we make sure that we launch project Artella Drive website,
+            # to make sure that Artella Drive connects to the proper remote server
+            self.open_artella_project_url()
+            time.sleep(8)  # Wait some seconds to give enough time to Artella Drive to connect to remote server
+            remote_projects = client.get_remote_projects(force_update=True) or dict()
 
     def _set_environment_variables(self, project=None):
         """

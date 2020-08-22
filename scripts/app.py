@@ -1650,23 +1650,23 @@ class ArtellaUpdater(QWidget, object):
         else:
             return None
 
-        artella_app_version = None
-        version_file = os.path.join(artella_folder, ARTELLA_NEXT_VERSION_FILE_NAME)
-        if os.path.isfile(version_file):
-            with open(version_file) as f:
-                artella_app_version = f.readline()
-
         if self._project_type == 'indie':
-            if artella_app_version is not None:
-                artella_folder = os.path.join(artella_folder, artella_app_version)
-            else:
-                artella_folder = [
-                    os.path.join(artella_folder, name) for name in os.listdir(artella_folder) if os.path.isdir(
-                        os.path.join(artella_folder, name)) and name != 'ui']
-                if len(artella_folder) == 1:
-                    artella_folder = artella_folder[0]
+            artella_app_version = None
+            version_file = os.path.join(artella_folder, ARTELLA_NEXT_VERSION_FILE_NAME)
+            if os.path.isfile(version_file):
+                with open(version_file) as f:
+                    artella_app_version = f.readline()
+
+                if artella_app_version is not None:
+                    artella_folder = os.path.join(artella_folder, artella_app_version)
                 else:
-                    LOGGER.info('Artella folder not found!')
+                    artella_folder = [
+                        os.path.join(artella_folder, name) for name in os.listdir(artella_folder) if os.path.isdir(
+                            os.path.join(artella_folder, name)) and name != 'ui']
+                    if len(artella_folder) == 1:
+                        artella_folder = artella_folder[0]
+                    else:
+                        LOGGER.info('Artella folder not found!')
 
         LOGGER.debug('ARTELLA FOLDER: {}'.format(artella_folder))
         if not os.path.exists(artella_folder):
