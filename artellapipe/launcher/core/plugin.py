@@ -25,7 +25,7 @@ import tpDcc
 from tpDcc.libs.python import python, decorators, path as path_utils
 from tpDcc.libs.qt.core import base
 
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger('artellapipe-launcher')
 
 
 class ArtellaLauncherPlugin(base.BaseWidget, object):
