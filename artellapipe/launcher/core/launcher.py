@@ -19,6 +19,7 @@ import importlib
 from Qt.QtWidgets import *
 
 import tpDcc
+from tpDcc.libs.python import path as path_utils
 from tpDcc.libs.qt.core import contexts
 from tpDcc.libs.qt.widgets import tabs
 
@@ -28,7 +29,7 @@ from artellapipe.launcher.core import defines, plugin as core_plugin
 from artellapipe.launcher.widgets import pluginspanel
 from artellapipe.libs.artella.core import artellalib
 
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger('artellapipe-launcher')
 
 
 class ArtellaLauncher(window.ArtellaWindow, object):
@@ -299,8 +300,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         :return: str
         """
 
-        import appdirs
-        data_path = appdirs.user_data_dir(self.get_clean_name())
+        data_path = path_utils.get_user_data_dir(self.get_clean_name())
         if not os.path.isdir(data_path):
             os.makedirs(data_path)
 
@@ -353,10 +353,6 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         """
 
         pass
-
-        # if flag:
-        #     self.close()
-        #     artellalib.spigot_client._connected = False
 
 
 def run(project, install_path, paths_to_register=None, tag=None, dev=False):

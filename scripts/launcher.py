@@ -22,6 +22,12 @@ if __name__ == '__main__':
     parser.add_argument('--dev', required=False, default=False, action='store_true')
     args = parser.parse_args()
 
+    import tpDcc.loader
+    tpDcc.loader.init(dev=args.dev)
+
+    import artellapipe.loader
+    artellapipe.loader.init(dev=args.dev)
+
     import artellapipe
     loader_mod = importlib.import_module('{}.loader'.format(args.project_name))
 

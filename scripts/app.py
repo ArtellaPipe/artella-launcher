@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import time
 import json
 import psutil
 import shutil
@@ -41,7 +40,6 @@ except ImportError:
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-ARTELLA_APP_NAME = 'lifecycler'
 ARTELLA_NEXT_VERSION_FILE_NAME = 'version_to_run_next'
 
 
@@ -97,7 +95,7 @@ class ArtellaUpdaterException(Exception, object):
 
 class ArtellaUpdater(QWidget, object):
     def __init__(
-            self, app, project_name, app_version, deployment_repository, documentation_url=None,
+            self, app, project_name, project_type, app_version, deployment_repository, documentation_url=None,
             deploy_tag=None, install_env_var=None, requirements_file_name=None, force_venv=False,
             splash_path=None, script_path=None, requirements_path=None, artellapipe_configs_path=None,
             dev=False, update_icon=False, parent=None):
@@ -117,6 +115,7 @@ class ArtellaUpdater(QWidget, object):
             self._dev = True
 
         self._project_name = project_name if project_name else self._get_app_config('name')
+        self._project_type = project_type if project_type else self._get_app_config('type')
         self._app_version = app_version if app_version else self._get_app_config('version')
         self._repository = deployment_repository if deployment_repository else self._get_app_config('repository')
         self._splash_path = splash_path if splash_path and os.path.isfile(splash_path) else \
@@ -143,6 +142,7 @@ class ArtellaUpdater(QWidget, object):
         self._all_tags = list()
         self._deploy_tag = deploy_tag if deploy_tag else self._get_deploy_tag()
         self._script_path = script_path if script_path and os.path.isfile(script_path) else self._get_script_path()
+        self._artella_app = 'lifecycler' if self._project_type == 'indie' else 'artella'
 
         # If not valid tag is found we close the application
         if not self._deploy_tag:
@@ -828,9 +828,9 @@ class ArtellaUpdater(QWidget, object):
         self._splash.close()
 
         # if not self._dev:
-        time.sleep(3)
-        QApplication.instance().quit()
-        sys.exit()
+        # time.sleep(3)
+        # QApplication.instance().quit()
+        # sys.exit()
 
     def _check_installation_path(self, install_path):
         """
@@ -1505,7 +1505,6 @@ class ArtellaUpdater(QWidget, object):
 
         self._set_splash_text('Updating Artella Paths ...')
         self._update_artella_paths()
-        self._update_artella_paths()
         self._set_splash_text('Closing Artella App instances ...')
         # For now we do not check if Artella was closed or not
         self._close_all_artella_app_processes()
@@ -1644,7 +1643,10 @@ class ArtellaUpdater(QWidget, object):
         if is_mac():
             artella_folder = os.path.join(os.path.expanduser('~/Library/Application Support/'), 'Artella')
         elif is_windows():
-            artella_folder = os.path.join(os.getenv('PROGRAMDATA'), 'Artella')
+            if self._project_type == 'indie':
+                artella_folder = os.path.join(os.getenv('PROGRAMDATA'), 'Artella')
+            else:
+                artella_folder = os.path.join(os.getenv('ProgramFiles(x86)'), 'Artella')
         else:
             return None
 
@@ -1654,16 +1656,17 @@ class ArtellaUpdater(QWidget, object):
             with open(version_file) as f:
                 artella_app_version = f.readline()
 
-        if artella_app_version is not None:
-            artella_folder = os.path.join(artella_folder, artella_app_version)
-        else:
-            artella_folder = [
-                os.path.join(artella_folder, name) for name in os.listdir(artella_folder) if os.path.isdir(
-                    os.path.join(artella_folder, name)) and name != 'ui']
-            if len(artella_folder) == 1:
-                artella_folder = artella_folder[0]
+        if self._project_type == 'indie':
+            if artella_app_version is not None:
+                artella_folder = os.path.join(artella_folder, artella_app_version)
             else:
-                LOGGER.info('Artella folder not found!')
+                artella_folder = [
+                    os.path.join(artella_folder, name) for name in os.listdir(artella_folder) if os.path.isdir(
+                        os.path.join(artella_folder, name)) and name != 'ui']
+                if len(artella_folder) == 1:
+                    artella_folder = artella_folder[0]
+                else:
+                    LOGGER.info('Artella folder not found!')
 
         LOGGER.debug('ARTELLA FOLDER: {}'.format(artella_folder))
         if not os.path.exists(artella_folder):
@@ -1679,6 +1682,10 @@ class ArtellaUpdater(QWidget, object):
         Updates system path to add artella paths if they are not already added
         :return:
         """
+
+        # Artella update paths is only needed for Artella Indie projects
+        if self._project_type != 'indie':
+            return
 
         artella_folder = self._get_artella_data_folder()
 
@@ -1696,7 +1703,7 @@ class ArtellaUpdater(QWidget, object):
         """
 
         try:
-            proc_name = ARTELLA_APP_NAME
+            proc_name = self._artella_app
             if is_windows():
                 proc_name = '{}.exe'.format(proc_name)
             for proc in psutil.process_iter():
@@ -1715,8 +1722,19 @@ class ArtellaUpdater(QWidget, object):
         :return: str
         """
 
-        artella_folder = os.path.dirname(self._get_artella_data_folder())
-        return os.path.join(artella_folder, ARTELLA_APP_NAME)
+        if is_windows():
+            if self._project_type == 'indie':
+                artella_folder = os.path.dirname(self._get_artella_data_folder())
+            else:
+                artella_folder = self._get_artella_data_folder()
+            return os.path.join(artella_folder, self._artella_app)
+        elif is_mac():
+            if self._project_type == 'indie':
+                artella_folder = os.path.dirname(self._get_artella_data_folder())
+                return os.path.join(artella_folder, self._artella_app)
+            else:
+                artella_folder = '/System/Applications'
+                return os.path.join(artella_folder, 'Artella Drive.app')
 
     def _get_artella_program_folder(self):
         """
@@ -1746,11 +1764,16 @@ class ArtellaUpdater(QWidget, object):
         # TODO: This should not work in MAC, find a cross-platform way of doing this
 
         if is_mac():
-            artella_app_file = self._get_artella_app() + '.bundle'
+            if self._project_type == 'indie':
+                artella_app_file = self._get_artella_app() + '.bundle'
+            else:
+                artella_app_file = self._get_artella_app()
         else:
-            #  Executing Artella executable directly does not work
-            # artella_app_file = get_artella_app() + '.exe'
-            artella_app_file = self._get_artella_launch_shortcut()
+            if self._project_type == 'indie':
+                #  Executing Artella executable directly does not work in Artella Indie
+                artella_app_file = self._get_artella_launch_shortcut()
+            else:
+                artella_app_file = self._get_artella_app() + '.exe'
 
         artella_app_file = artella_app_file
         LOGGER.info('Artella App File: {0}'.format(artella_app_file))
@@ -1952,6 +1975,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--project-name', required=False)
+    parser.add_argument('--project-type', required=False)
     parser.add_argument('--version', required=False, default="0.0.0")
     parser.add_argument('--repository', required=False)
     parser.add_argument('--icon-path', required=False, default=None)
@@ -1976,6 +2000,7 @@ if __name__ == '__main__':
             new_app = ArtellaUpdater(
                 app=app,
                 project_name=args.project_name,
+                project_type=args.project_type,
                 app_version=args.version,
                 deployment_repository=args.repository,
                 splash_path=args.splash_path,
