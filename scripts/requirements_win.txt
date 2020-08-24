@@ -3,13 +3,14 @@
 # ===================================================================
 PySide;python_version <= '3.4'
 PySide2;python_version > '3.4'
-pathlib2
-requests
-lxml
-beautifulsoup4
-packaging
-PyInstaller
-appdirs
-backports.tempfile
-psutil
-Qt.py
+pathlib2==2.3.5
+requests==2.22.0
+lxml==4.5.2
+beautifulsoup4==4.9.1
+packaging==20.4
+pyinstaller==4.0;python_version > '3.4'
+pyinstaller==3.6;python_version <= '3.4'
+backports.tempfile==1.0
+Qt.py==1.2.6
+psutil==5.7.2
+appdirs==1.4.4
