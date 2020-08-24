@@ -1818,7 +1818,10 @@ class ArtellaUpdater(QWidget, object):
         if os.path.isfile(artella_app_file):
             LOGGER.info('Launching Artella App ...')
             LOGGER.debug('Artella App File: {0}'.format(artella_app_file))
-            os.startfile(artella_app_file.replace('\\', '//'))
+
+            subprocess.Popen(
+                ['cmd.exe', '/C', artella_app_file.replace('\\', '//')],
+                stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
 
     def _on_open_tag_info(self):
         """
@@ -1967,8 +1970,14 @@ class ArtellaUpdater(QWidget, object):
 
         if command:
             if is_windows():
-                process = subprocess.Popen(
-                    command, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+                if close_fds:
+                    process = subprocess.Popen(
+                        command, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+                else:
+                    process = subprocess.Popen(
+                        command, close_fds=close_fds, creationflags=creation_flags,
+                        stdout=stdout, stdin=stdin, stderr=stderr
+                    )
             elif is_mac():
                 process = subprocess.Popen(command, close_fds=close_fds, stdout=stdout, shell=shell)
             else:
