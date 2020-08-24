@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import json
+import time
 import psutil
 import shutil
 import appdirs
@@ -1458,20 +1459,37 @@ class ArtellaUpdater(QWidget, object):
 
         try:
             if is_windows():
+                start_time = time.time()
+                LOGGER.info('\nPip install --> first try ...')
+                process = self._run_subprocess(command=pip_cmd)
+                output, error = process.communicate()
+                LOGGER.info('Pip install --> first try ---> executed in {} seconds\n!'.format(time.time() - start_time))
+                LOGGER.info(output)
+                LOGGER.error(error)
+
+                # We retry twice because sometimes pip fails when trying to install new packages
+                start_time = time.time()
+                LOGGER.info('\nPip install --> second try ...')
                 process = self._run_subprocess(command=pip_cmd)
                 output, error = process.communicate()
                 LOGGER.info(output)
                 LOGGER.error(error)
+                LOGGER.info('Pip install --> first try ---> executed in {} seconds\n!'.format(time.time() - start_time))
                 if error:
-                    error_dlg = AppErrorDialog(error)
-                    error_dlg.exec_()
-                    return False
+                    show_error = False
+                    error_split = error.split('\n')
+                    for error_str in error_split:
+                        if not error_str or error_str.startswith(
+                                ('DEPRECATION:', 'WARNING:', 'You should consider upgrading via')):
+                            continue
+                        else:
+                            show_error = True
+                            break
+                    if show_error:
+                        error_dlg = AppErrorDialog(error)
+                        error_dlg.exec_()
+                        return False
 
-                # We retry twice because sometimes pip fails when trying to install new packages
-                process = self._run_subprocess(command=pip_cmd)
-                output, error = process.communicate()[0]
-                LOGGER.info(output)
-                LOGGER.error(error)
         except Exception as exc:
             raise ArtellaUpdaterException(exc)
 
@@ -1671,7 +1689,6 @@ class ArtellaUpdater(QWidget, object):
             return None
 
         if self._project_type == 'indie':
-            artella_app_version = None
             version_file = os.path.join(artella_folder, ARTELLA_NEXT_VERSION_FILE_NAME)
             if os.path.isfile(version_file):
                 with open(version_file) as f:
@@ -1928,7 +1945,7 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.warning(msg)
 
     def _run_subprocess(self, command=None, commands_list=None, close_fds=False, hide_console=True,
-                        stdout=None, stdin=None, stderr=None, shell=True):
+                        stdout=None, stderr=None, shell=True):
 
         if not commands_list:
             commands_list = list()
@@ -1938,8 +1955,12 @@ class ArtellaUpdater(QWidget, object):
             creation_flags = 0x08000000         # No window
 
         stdout = stdout or subprocess.PIPE
-        stdin = stdin or subprocess.PIPE
         stderr = stderr or subprocess.PIPE
+
+        if sys.version_info[0] == 2:
+            stdin = open(os.devnull, 'wb')
+        else:
+            stdin = subprocess.DEVNULL
 
         if close_fds:
             stdout = None
@@ -1947,8 +1968,7 @@ class ArtellaUpdater(QWidget, object):
         if command:
             if is_windows():
                 process = subprocess.Popen(
-                    command, close_fds=close_fds, creationflags=creation_flags,
-                    stdout=stdout, stdin=stdin, stderr=stderr)
+                    command, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
             elif is_mac():
                 process = subprocess.Popen(command, close_fds=close_fds, stdout=stdout, shell=shell)
             else:
@@ -1956,7 +1976,8 @@ class ArtellaUpdater(QWidget, object):
         elif commands_list:
             if is_windows():
                 process = subprocess.Popen(
-                    commands_list, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+                    commands_list, close_fds=close_fds, creationflags=creation_flags,
+                    stdout=stdout, stdin=stdin, stderr=stderr)
             elif is_mac():
                 process = subprocess.Popen(commands_list, close_fds=close_fds, stdout=stdout, shell=shell)
             else:
