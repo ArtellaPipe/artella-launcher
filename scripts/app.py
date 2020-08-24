@@ -2010,7 +2010,7 @@ class AppErrorDialog(QDialog, object):
     def ui(self):
 
         self.main_layout = QVBoxLayout()
-        self.main_layout.setContentsMargins(2, 2, 2 ,2)
+        self.main_layout.setContentsMargins(2, 2, 2, 2)
         self.main_layout.setSpacing(2)
         self.setLayout(self.main_layout)
 
