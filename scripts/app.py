@@ -1819,9 +1819,9 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.info('Launching Artella App ...')
             LOGGER.debug('Artella App File: {0}'.format(artella_app_file))
 
-            subprocess.Popen(
-                ['cmd.exe', '/C', artella_app_file.replace('\\', '//')],
-                stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+            command = ['cmd.exe', '/C', artella_app_file.replace('\\', '//')]
+
+            self._run_subprocess(command)
 
     def _on_open_tag_info(self):
         """
