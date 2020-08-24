@@ -5,7 +5,6 @@ import json
 import psutil
 import shutil
 import appdirs
-import logging
 import zipfile
 import tarfile
 import argparse
@@ -15,6 +14,7 @@ import traceback
 import contextlib
 import subprocess
 import webbrowser
+import logging.config
 from pathlib2 import Path
 from bs4 import BeautifulSoup
 from backports import tempfile
@@ -37,8 +37,17 @@ except ImportError:
     from PySide2.QtWidgets import *
     from PySide2.QtGui import *
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
+
+logging_name = '__logging__.ini'
+logging_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), logging_name)
+if not os.path.isfile(logging_path):
+    logging_path = os.path.join(os.path.dirname(sys.executable), logging_name)
+    if not os.path.isfile(logging_path):
+        if hasattr(sys, '_MEIPASS'):
+            logging_path = os.path.join(sys._MEIPASS, 'resources', logging_name)
+
+logging.config.fileConfig(logging_path, disable_existing_loggers=False)
+LOGGER = logging.getLogger('artellapipe-updater')
 
 ARTELLA_NEXT_VERSION_FILE_NAME = 'version_to_run_next'
 
@@ -898,12 +907,12 @@ class ArtellaUpdater(QWidget, object):
                     'Installation cancelled by user')
                 return False
             if not os.path.isdir(install_path):
-                LOGGER.info('Selected Path does not exists!')
+                LOGGER.info('Selected Path does not exist!')
                 QMessageBox.information(
                     self,
-                    'Selected Path does nto exists',
-                    'Selected Path: "{}" does not exists. '
-                    'Installation cancelled!'.foramt(install_path))
+                    'Selected Path does not exist',
+                    'Selected Path: "{}" does not exist. '
+                    'Installation cancelled!'.format(install_path))
                 return False
             path_updated = True
 
@@ -941,11 +950,11 @@ class ArtellaUpdater(QWidget, object):
         fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         LOGGER.addHandler(fh)
 
-        print('{} Logger: "{}"'.format(self._project_name, logger_file))
-        LOGGER.info('\n\n\n')
-        LOGGER.info("=" * 50)
+        LOGGER.info('\n')
+        LOGGER.info('{} Logger: "{}"'.format(self._project_name, logger_file))
+        LOGGER.info("=" * 150)
         LOGGER.debug('Starting {} App'.format(self._project_name))
-        LOGGER.info("=" * 50)
+        LOGGER.info("=" * 150)
 
     def _clean_old_config(self):
         """
@@ -1450,15 +1459,21 @@ class ArtellaUpdater(QWidget, object):
         try:
             if is_windows():
                 process = self._run_subprocess(command=pip_cmd)
-                output = process.communicate()[0]
+                output, error = process.communicate()
                 LOGGER.info(output)
+                LOGGER.error(error)
+                if error:
+                    error_dlg = AppErrorDialog(error)
+                    error_dlg.exec_()
+                    return False
 
                 # We retry twice because sometimes pip fails when trying to install new packages
                 process = self._run_subprocess(command=pip_cmd)
-                output = process.communicate()[0]
+                output, error = process.communicate()[0]
                 LOGGER.info(output)
+                LOGGER.error(error)
         except Exception as exc:
-            raise Exception(exc)
+            raise ArtellaUpdaterException(exc)
 
         return True
 
@@ -1470,14 +1485,16 @@ class ArtellaUpdater(QWidget, object):
             if self._install_path and self._requirements_path and os.path.isfile(self._requirements_path):
                 valid_install = self._install_deployment_requirements()
                 if not valid_install:
-                    LOGGER.info("Forcing uninstall ...")
-                    QMessageBox.information(
+                    LOGGER.info("Error while installing requirements. Trying to uninstall ...")
+                    res = QMessageBox.question(
                         self._splash,
-                        'Forcing Uninstall',
-                        'Current installation is not valid.'
-                        '\n\nUninstall process will start after closing this dialog.\n\n'
-                        'Next time you launch the application, you will need to select a new installation path')
-                    self._on_uninstall(force=True)
+                        'Impossible to install/update tools properly',
+                        'Current tools installation is not valid.\n\nDo you want to clean current installation?.\n\n'
+                        'If you press Yes, next time you launch the application, you will need to select a '
+                        'new installation path and tools will be fully reinstalled.',
+                        buttons=QMessageBox.Yes | QMessageBox.No)
+                    if res == QMessageBox.Yes:
+                        self._on_uninstall(force=True)
                     return False
             return True
 
@@ -1487,13 +1504,16 @@ class ArtellaUpdater(QWidget, object):
                 return False
             valid_install = self._install_deployment_requirements()
             if not valid_install:
-                LOGGER.info("Forcing uninstall ...")
-                QMessageBox.information(
+                LOGGER.info("Error while installing requirements. Trying to uninstall ...")
+                res = QMessageBox.question(
                     self._splash,
-                    'Forcing Uninstall',
-                    'Current installation is not valid.\n\nUninstall process will start after closing this dialog.\n\n'
-                    'Next time you launch the application, you will need to select a new installation path')
-                self._on_uninstall(force=True)
+                    'Impossible to install/update tools properly',
+                    'Current tools installation is not valid.\n\nDo you want to clean current installation?.\n\n'
+                    'If you press Yes, next time you launch the application, you will need to select a '
+                    'new installation path and tools will be fully reinstalled.',
+                    buttons=QMessageBox.Yes | QMessageBox.No)
+                if res == QMessageBox.Yes:
+                    self._on_uninstall(force=True)
                 return False
 
         return True
@@ -1908,14 +1928,18 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.warning(msg)
 
     def _run_subprocess(self, command=None, commands_list=None, close_fds=False, hide_console=True,
-                        stdout=None, shell=True):
+                        stdout=None, stdin=None, stderr=None, shell=True):
 
         if not commands_list:
             commands_list = list()
 
         creation_flags = 0
         if hide_console and not self._dev:
-            creation_flags = 0x08000000
+            creation_flags = 0x08000000         # No window
+
+        stdout = stdout or subprocess.PIPE
+        stdin = stdin or subprocess.PIPE
+        stderr = stderr or subprocess.PIPE
 
         if close_fds:
             stdout = None
@@ -1923,7 +1947,8 @@ class ArtellaUpdater(QWidget, object):
         if command:
             if is_windows():
                 process = subprocess.Popen(
-                    command, close_fds=close_fds, creationflags=creation_flags, stdout=stdout)
+                    command, close_fds=close_fds, creationflags=creation_flags,
+                    stdout=stdout, stdin=stdin, stderr=stderr)
             elif is_mac():
                 process = subprocess.Popen(command, close_fds=close_fds, stdout=stdout, shell=shell)
             else:
@@ -1969,6 +1994,58 @@ def application():
         app.exec_()
     else:
         yield app
+
+
+class AppErrorDialog(QDialog, object):
+    def __init__(self, exc_trace, parent=None):
+        self._trace = exc_trace
+        super(AppErrorDialog, self).__init__(parent=parent)
+
+        self.setWindowTitle('Artella Launcher - Error')
+        self.setWindowIcon(QIcon(self._get_resource('artella_ok.png')))
+
+        self.ui()
+        self.setup_signals()
+
+    def ui(self):
+
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(2, 2, 2 ,2)
+        self.main_layout.setSpacing(2)
+        self.setLayout(self.main_layout)
+
+        self._error_text = QPlainTextEdit(str(self._trace) if self._trace else '')
+        self._error_text.setReadOnly(True)
+        self._error_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.main_layout.addWidget(self._error_text)
+
+        buttons_lyt = QHBoxLayout()
+        self._copy_to_clipboard_btn = QPushButton('Copy to Clipboard')
+        buttons_lyt.addStretch()
+        buttons_lyt.addWidget(self._copy_to_clipboard_btn)
+        self.main_layout.addLayout(buttons_lyt)
+
+    def setup_signals(self):
+        self._copy_to_clipboard_btn.clicked.connect(self._on_copy_to_clipboard)
+
+    def _get_resource(self, resource_name):
+        resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', resource_name)
+        if not os.path.isfile(resource_path):
+            resource_path = os.path.join(os.path.dirname(sys.executable), 'resources', resource_name)
+            if not os.path.isfile(resource_path):
+                if hasattr(sys, '_MEIPASS'):
+                    resource_path = os.path.join(sys._MEIPASS, 'resources', resource_name)
+
+        LOGGER.info("Retrieving resource: {} >>> {}".format(resource_name, resource_path))
+
+        return resource_path
+
+    def _on_copy_to_clipboard(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self._error_text.toPlainText(), QClipboard.Clipboard)
+        if clipboard.supportsSelection():
+            clipboard.setText(self._error_text.toPlainText(), QClipboard.Selection)
 
 
 if __name__ == '__main__':

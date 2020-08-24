@@ -350,6 +350,17 @@ class LauncherGenerator(object):
     def _get_default_app_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app.py')
 
+    def _get_updater_logging_path(self):
+        logging_name = '__logging__.ini'
+        logging_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), logging_name)
+        if not os.path.isfile(logging_path):
+            logging_path = os.path.join(os.path.dirname(sys.executable), logging_name)
+            if not os.path.isfile(logging_path):
+                if hasattr(sys, '_MEIPASS'):
+                    logging_path = os.path.join(sys._MEIPASS, 'resources', logging_name)
+
+        return logging_path
+
     def _get_resources_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
 
@@ -476,7 +487,8 @@ class LauncherGenerator(object):
             self._get_default_icon_path(),
             self._get_config_path(),
             self._get_launcher_script_path(),
-            self._get_resources_path()
+            self._get_resources_path(),
+            self._get_updater_logging_path()
         ]
 
         for data in data_files:

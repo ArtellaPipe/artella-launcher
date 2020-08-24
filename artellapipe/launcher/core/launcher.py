@@ -13,21 +13,21 @@ __maintainer__ = "Tomas Poveda"
 __email__ = "tpovedatd@gmail.com"
 
 import os
-import time
 import logging
 import importlib
+import webbrowser
 
 from Qt.QtWidgets import *
 
 import tpDcc
 from tpDcc.libs.python import path as path_utils
-from tpDcc.libs.qt.core import contexts
-from tpDcc.libs.qt.widgets import tabs
+from tpDcc.libs.qt.core import contexts, qtutils
+from tpDcc.libs.qt.widgets import tabs, stack
 
 from artellapipe.widgets import window
 from artellapipe.utils import exceptions
 from artellapipe.launcher.core import defines, plugin as core_plugin
-from artellapipe.launcher.widgets import pluginspanel
+from artellapipe.launcher.widgets import waitconnection, pluginspanel
 from artellapipe.libs.artella.core import artellalib
 
 LOGGER = logging.getLogger('artellapipe-launcher')
@@ -154,9 +154,15 @@ class ArtellaLauncher(window.ArtellaWindow, object):
     def ui(self):
         super(ArtellaLauncher, self).ui()
 
-        self._plugins_tab = tabs.BaseEditableTabWidget()
+        self._stack = stack.SlidingOpacityStackedWidget()
+        self.main_layout.addWidget(self._stack)
+
+        self._wait_widget = waitconnection.WaitConnectionWidget(parent=self)
+        self._plugins_tab = tabs.BaseEditableTabWidget(parent=self)
         self._plugins_tab.tabBar().add_tab_btn.setVisible(False)
-        self.main_layout.addWidget(self._plugins_tab)
+
+        self._stack.addWidget(self._wait_widget)
+        self._stack.addWidget(self._plugins_tab)
 
         self._plugins_panel = pluginspanel.PluginsPanel(project=self._project)
         self._plugins_tab.addTab(self._plugins_panel, 'HOME')
@@ -167,6 +173,7 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         self._plugins_tab.tabBar().set_is_editable(False)
 
     def setup_signals(self):
+        self._wait_widget.connectionEstablished.connect(self._on_connection_established)
         self._plugins_panel.openPlugin.connect(self._on_open_plugin)
         self.closed.connect(self._on_close)
 
@@ -185,15 +192,99 @@ class ArtellaLauncher(window.ArtellaWindow, object):
         for plugin in loaded_plugins:
             self._add_plugin(plugin)
 
-        # TODO: The UI should not be enabled until we connect to Remote server
-        client = artellalib.get_artella_client()
-        remote_projects = client.get_remote_projects(force_update=True) or dict()
-        if not remote_projects:
-            # If the project is an Enterprise one, we make sure that we launch project Artella Drive website,
-            # to make sure that Artella Drive connects to the proper remote server
-            self.open_artella_project_url()
-            time.sleep(8)  # Wait some seconds to give enough time to Artella Drive to connect to remote server
+        if self._project.is_indie():
+            self._open_plugins_widget()
+        else:
+            client = artellalib.get_artella_client()
+            if not client:
+                qtutils.show_warning(
+                    self, 'Artella Drive Error',
+                    'Was not possible to open Artella Drive. Download and install Artella Drive in your computer. '
+                    '\n\nAfter closing this message, Artella Drive App download page will be opened in your web '
+                    'browser ...')
+                webbrowser.open('https://updates.artellaapp.com/')
+                self.close()
+                return
+
+            client.update_remotes_sessions(show_dialogs=False)
             remote_projects = client.get_remote_projects(force_update=True) or dict()
+            if not remote_projects:
+                self._open_wait_connection_widget()
+            else:
+                project_found = False
+                current_project_id = self._project.id
+                remote_projects = client.get_remote_projects(force_update=True) or dict()
+                for remote_api, project_dict in remote_projects.items():
+                    if not project_dict:
+                        continue
+                    for project_id, project_data in project_dict.items():
+                        if project_id == current_project_id:
+                            project_found = True
+                            break
+                if project_found:
+                    self._open_plugins_widget()
+                else:
+                    self._open_wait_connection_widget()
+
+    def create_logger(self):
+        """
+        Creates and initializes Artella launcher logger
+        """
+
+        from tpDcc.libs.python import log as log_utils
+
+        log_path = self.get_data_path()
+        if not os.path.exists(log_path):
+            raise RuntimeError('{} Log Path {} does not exists!'.format(self.name, log_path))
+
+        log = log_utils.create_logger(logger_name=self.get_clean_name(), logger_path=log_path)
+        logger = log.logger
+
+        if '{}_DEV'.format(self.get_clean_name().upper()) in os.environ and os.environ.get(
+                '{}_DEV'.format(self.get_clean_name().upper())) in ['True', 'true']:
+            logger.setLevel(log_utils.LoggerLevel.DEBUG)
+        else:
+            logger.setLevel(log_utils.LoggerLevel.WARNING)
+
+        return log, logger
+
+    def init_config(self):
+        """
+        Function that reads launcher configuration and initializes launcher variables properly
+        This function can be extended in new launchers
+        """
+
+        self._name = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_NAME, defines.ARTELLA_DEFAULT_LAUNCHER_NAME)
+        self._version = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_VERSION, defines.DEFAULT_VERSION)
+        self._plugins = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_PLUGINS, list())
+
+    def get_clean_name(self):
+        """
+        Returns a cleaned version of the launcher name (without spaces and in lowercase)
+        :return: str
+        """
+
+        return self.name.replace(' ', '').lower()
+
+    def get_data_path(self):
+        """
+        Returns path where user data for Artella launcher should be located
+        This path is mainly located to store tools configuration files and log files
+        :return: str
+        """
+
+        data_path = path_utils.get_user_data_dir(self.get_clean_name())
+        if not os.path.isdir(data_path):
+            os.makedirs(data_path)
+
+        return data_path
+
+    def _open_wait_connection_widget(self):
+        self._wait_widget.listen_for_connections()
+        self._stack.setCurrentWidget(self._wait_widget)
+
+    def _open_plugins_widget(self):
+        self._stack.setCurrentWidget(self._plugins_tab)
 
     def _set_environment_variables(self, project=None):
         """
@@ -264,59 +355,6 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         self._plugins_panel.add_plugin(plugin)
 
-    def create_logger(self):
-        """
-        Creates and initializes Artella launcher logger
-        """
-
-        from tpDcc.libs.python import log as log_utils
-
-        log_path = self.get_data_path()
-        if not os.path.exists(log_path):
-            raise RuntimeError('{} Log Path {} does not exists!'.format(self.name, log_path))
-
-        log = log_utils.create_logger(logger_name=self.get_clean_name(), logger_path=log_path)
-        logger = log.logger
-
-        if '{}_DEV'.format(self.get_clean_name().upper()) in os.environ and os.environ.get(
-                '{}_DEV'.format(self.get_clean_name().upper())) in ['True', 'true']:
-            logger.setLevel(log_utils.LoggerLevel.DEBUG)
-        else:
-            logger.setLevel(log_utils.LoggerLevel.WARNING)
-
-        return log, logger
-
-    def init_config(self):
-        """
-        Function that reads launcher configuration and initializes launcher variables properly
-        This function can be extended in new launchers
-        """
-
-        self._name = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_NAME, defines.ARTELLA_DEFAULT_LAUNCHER_NAME)
-        self._version = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_VERSION, defines.DEFAULT_VERSION)
-        self._plugins = self._config.data.get(defines.ARTELLA_CONFIG_LAUNCHER_PLUGINS, list())
-
-    def get_clean_name(self):
-        """
-        Returns a cleaned version of the launcher name (without spaces and in lowercase)
-        :return: str
-        """
-
-        return self.name.replace(' ', '').lower()
-
-    def get_data_path(self):
-        """
-        Returns path where user data for Artella launcher should be located
-        This path is mainly located to store tools configuration files and log files
-        :return: str
-        """
-
-        data_path = path_utils.get_user_data_dir(self.get_clean_name())
-        if not os.path.isdir(data_path):
-            os.makedirs(data_path)
-
-        return data_path
-
     def _on_toggle_console(self):
         """
         Internal callback function that is called when the user presses console button
@@ -335,6 +373,17 @@ class ArtellaLauncher(window.ArtellaWindow, object):
 
         self.close()
         QApplication.instance().quit()
+
+    def _on_connection_established(self):
+        """
+        Internal callback function that is called when a connection to Artella remote server is established
+        """
+
+        self._project.update_paths()
+        self._project.set_environment_variables()
+        self._project.update_project()
+
+        self._open_plugins_widget()
 
     def _on_open_plugin(self, plugin):
         """
