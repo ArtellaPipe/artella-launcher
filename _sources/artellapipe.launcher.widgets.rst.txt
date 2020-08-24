@@ -9,6 +9,7 @@ Submodules
 
    artellapipe.launcher.widgets.console
    artellapipe.launcher.widgets.pluginspanel
+   artellapipe.launcher.widgets.waitconnection
 
 Module contents
 ---------------

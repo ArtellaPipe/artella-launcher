@@ -1,0 +1,7 @@
+artellapipe.launcher.widgets.waitconnection module
+==================================================
+
+.. automodule:: artellapipe.launcher.widgets.waitconnection
+   :members:
+   :undoc-members:
+   :show-inheritance:
