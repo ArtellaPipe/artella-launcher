@@ -124,12 +124,12 @@ class ArtellaUpdater(QWidget, object):
         if self._requirements_path and os.path.isfile(self._requirements_path):
             self._dev = True
 
-        self._project_name = project_name if project_name else self._get_app_config('name')
-        self._project_type = project_type if project_type else self._get_app_config('type')
-        self._app_version = app_version if app_version else self._get_app_config('version')
-        self._repository = deployment_repository if deployment_repository else self._get_app_config('repository')
-        self._splash_path = splash_path if splash_path and os.path.isfile(splash_path) else \
-            self._get_resource(self._get_app_config('splash'))
+        self._project_name = self._get_app_config('name') or project_name
+        self._project_type = self._get_app_config('type') or project_type
+        self._app_version = self._get_app_config('version') or app_version
+        self._repository = self._get_app_config('repository') or deployment_repository
+        self._splash_path = self._get_resource(self._get_app_config('splash')) or splash_path
+
         self._force_venv = force_venv
         self._venv_info = dict()
 
@@ -262,8 +262,7 @@ class ArtellaUpdater(QWidget, object):
 
         data = {}
         config_file_name = 'config.json'
-        config_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'scripts', config_file_name)
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), config_file_name)
         if not os.path.isfile(config_path):
             config_path = os.path.join(os.path.dirname(sys.executable), 'resources', config_file_name)
             if not os.path.isfile(config_path):
@@ -1798,8 +1797,6 @@ class ArtellaUpdater(QWidget, object):
         Executes Artella App
         """
 
-        # TODO: This should not work in MAC, find a cross-platform way of doing this
-
         if is_mac():
             if self._project_type == 'indie':
                 artella_app_file = self._get_artella_app() + '.bundle'
@@ -1807,7 +1804,6 @@ class ArtellaUpdater(QWidget, object):
                 artella_app_file = self._get_artella_app()
         else:
             if self._project_type == 'indie':
-                #  Executing Artella executable directly does not work in Artella Indie
                 artella_app_file = self._get_artella_launch_shortcut()
             else:
                 artella_app_file = self._get_artella_app() + '.exe'
@@ -1819,9 +1815,7 @@ class ArtellaUpdater(QWidget, object):
             LOGGER.info('Launching Artella App ...')
             LOGGER.debug('Artella App File: {0}'.format(artella_app_file))
 
-            command = ['cmd.exe', '/C', artella_app_file.replace('\\', '//')]
-
-            self._run_subprocess(command)
+            os.startfile('"{}"'.format(artella_app_file.replace('\\', '//')))
 
     def _on_open_tag_info(self):
         """
