@@ -34,10 +34,11 @@ def is_linux():
 
 
 class LauncherGenerator(object):
-    def __init__(self, project_name, version, repository, app_path, clean_env, clean_env_after, update_requirements,
-                 icon_path, splash_path, install_path, windowed, one_file, dev):
+    def __init__(self, project_name, project_type, version, repository, app_path, clean_env, clean_env_after,
+                 update_requirements, icon_path, splash_path, install_path, windowed, one_file, dev):
 
         self._project_name = project_name
+        self._project_type = project_type
         self._version = version
         self._repository = repository
         self._clean_env = clean_env
@@ -405,7 +406,8 @@ class LauncherGenerator(object):
             'version': self._version,
             'repository': self._repository,
             'splash': os.path.basename(self._splash_path),
-            'icon': os.path.basename(self._icon_path)
+            'icon': os.path.basename(self._icon_path),
+            'type': self._project_type
         }
 
         config_path = self._get_config_path()
@@ -540,6 +542,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--name', required=False, default='artella', help='Name of the Python environment')
     parser.add_argument(
+        '--type', required=False, default='enterprise', help='Type of the Artella Project ("indie" or "enterprise")')
+    parser.add_argument(
         '--version', required=False, default='0.0.0', help='Version of the Launcher Tool')
     parser.add_argument(
         '--repository', required=False, default='', help='URL where GitHub deployment repository is located')
@@ -582,6 +586,7 @@ if __name__ == '__main__':
 
     launcher_generator = LauncherGenerator(
         project_name=args.name,
+        project_type=args.type,
         version=args.version,
         repository=args.repository,
         app_path=args.app_path,
