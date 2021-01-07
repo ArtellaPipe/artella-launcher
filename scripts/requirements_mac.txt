@@ -4,7 +4,7 @@
 PySide2
 pathlib2==2.3.5
 requests==2.22.0
-lxml==4.5.2
+lxml==4.6.2
 beautifulsoup4==4.9.1
 packaging==20.4
 pyinstaller==4.0;python_version > '3.4'
