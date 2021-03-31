@@ -10,7 +10,7 @@ packaging==20.4
 beautifulsoup4==4.9.1
 pyinstaller==4.0;python_version > '3.4'
 pyinstaller==3.6;python_version <= '3.4'
-lxml==4.5.2
+lxml==4.6.3
 python-json-logger==0.1.11
 sentry-sdk==0.16.5
 tpDcc-libs-python
