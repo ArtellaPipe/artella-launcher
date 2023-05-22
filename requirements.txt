@@ -5,7 +5,7 @@ Qt.py==1.2.6
 psutil==5.7.2
 backports.tempfile==1.0
 pathlib2==2.3.5
-requests==2.22.0
+requests==2.31.0
 packaging==20.4
 beautifulsoup4==4.9.1
 pyinstaller==4.0;python_version > '3.4'
