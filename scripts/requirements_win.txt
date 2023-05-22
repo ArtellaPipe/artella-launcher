@@ -4,7 +4,7 @@
 PySide;python_version <= '3.4'
 PySide2;python_version > '3.4'
 pathlib2==2.3.5
-requests==2.22.0
+requests==2.31.0
 lxml==4.5.2
 beautifulsoup4==4.9.1
 packaging==20.4
